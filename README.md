@@ -1,5 +1,5 @@
 # kai-cs-imgd-420x
-This is my github page for cs-imgd-420x class! welcome!
+This is Kai's github page for cs-imgd-420x class! welcome!
 
 ## Directory structure
 ### Assignment 2 - Shader Live Coding:
