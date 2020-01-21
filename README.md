@@ -2,6 +2,7 @@
 This is my github page for cs-imgd-420x class! welcome!
 
 Directory structure:
+
 Assignment 2 - Shader Live Coding ---------------------> code.glsl (glsl code for assignment 2 )
                                   
                                        
