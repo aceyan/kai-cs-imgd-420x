@@ -7,5 +7,5 @@ I got some feedback from John.
 1. The interactive effect with mouse position is not that recognizable. This is not what I expected. But it is true. He didn't notice the mouse interaction until I told him.
 2. The change of the thickness of the line is not obvious enough. He suggested to make the change more dramatic according to the music.
 3. The picture and music match very well, can feel the sense of speed from this demo. I am glad to hear this.
-4. The pictures and music reminded him of the sense of racing and drifting in the Initial D. It is turn out he is also a big fan of Initial D and he can get all the feeling I try to convey, that is great.
+4. The pictures and music reminded him of the sense of racing and drifting in the Initial D. It turns out he is also a big fan of Initial D and he can get all the feeling I try to convey, that is great.
 5. The color scheme is like the taillight of a car, which is very cool. This is beyond my expectation in which I want to create simulation of winding road in my demo. This is the beauty of artistic creation; everyone has different interpretations for one work of art.
