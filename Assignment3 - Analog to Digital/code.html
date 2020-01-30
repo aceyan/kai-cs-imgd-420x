@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang='en'>
+  <head>
+    <style>body{ margin:0 }</style>
+  </head>
+  <body>
+    <canvas id='gl'></canvas>
+  </body>
+  <!-- vertex shader, as simple as possible -->
+  <script id='vertex' type='x-shader/x-vertex'>
+    attribute vec2 a_position;
+
+    void main() 
+	{
+      gl_Position = vec4( a_position, 0., 1. );
+    }
+  </script>
+
+  <!-- fragment shader -->
+  <script id='fragment' type='x-shader/x-fragment'>
+    #ifdef GL_ES
+    precision mediump float;
+    #endif
+    
+    uniform mediump float time;
+	uniform int disType;
+    uniform mediump vec2 resolution;
+    uniform sampler2D uSampler;
+	uniform bool isInversion;
+	uniform bool isKeying;
+	uniform bool isNoise;
+	uniform mediump float brightness;
+	uniform vec3 rgbControl;
+	
+	
+	// 2D Random
+float random (in vec2 st) 
+{
+    return fract(sin(dot(st.xy,
+                         vec2(12.9898,78.233)))
+                 * 43758.5453123);
+}
+
+
+float noise (in vec2 st) 
+{
+    vec2 i = floor(st);
+    vec2 f = fract(st);
+
+    // Four corners in 2D of a tile
+    float a = random(i);
+    float b = random(i + vec2(1.0, 0.0));
+    float c = random(i + vec2(0.0, 1.0));
+    float d = random(i + vec2(1.0, 1.0));
+
+    // Smooth Interpolation
+
+    // Cubic Hermine Curve.  Same as SmoothStep()
+    vec2 u = f*f*(3.0-2.0*f);
+    // u = smoothstep(0.,1.,f);
+
+    // Mix 4 coorners percentages
+    return mix(a, b, u.x) +
+            (c - a)* u.y * (1.0 - u.x) +
+            (d - b) * u.x * u.y;
+}
+	
+
+vec4 sineOscillators(vec2 st)
+{
+	float y = 0.5*sin(75.0 * st.x + time / 100.0) + 0.5;
+
+    vec3 color = vec3(y);
+    
+	return  vec4(color,1.0) ;
+}	
+	
+vec4 SquarewaveOscillator(vec2 st)
+{
+	float y = 0.5*sin(75.0 * st.x + time / 50.0) + 0.5;
+	y = step(0.5,y);
+    vec3 color = vec3(y);
+
+    
+	return  vec4(color,1.0) ;
+}
+	
+vec4 TriangleOscillator(vec2 st)
+{
+//    y = abs(mod(x+1.0, 2.0 * 1.0) - 1.0);
+	float cycle = 0.05;
+	float y = abs(mod(st.x + time / 1000.0, 2.0 * cycle) - cycle) * 1.0/cycle;
+	
+    vec3 color = vec3(y);
+	return  vec4(color,1.0) ;
+}	
+	
+    void main() 
+	{
+	vec2 st = vec2(gl_FragCoord.x / resolution.x,gl_FragCoord.y / resolution.y);
+	vec4 color;
+      color = vec4( 
+         st.x,
+		 st.y,
+        mod( time/100., 1. ), 
+        1.0 
+      );
+	  
+	  if(disType == 1)
+	  {
+	    color =  texture2D( uSampler, gl_FragCoord.xy / resolution ) * sineOscillators(st);
+	  }
+	  else if(disType == 2)
+	  {
+		color =  texture2D( uSampler, gl_FragCoord.xy / resolution ) * SquarewaveOscillator(st);
+	  }
+	   else if(disType == 3)
+	  {
+		color =  texture2D( uSampler, gl_FragCoord.xy / resolution ) * TriangleOscillator(st);
+	  }
+	  else if(disType == 4)
+	  {
+	  color =  texture2D( uSampler, gl_FragCoord.xy / resolution ) * sineOscillators(st) * SquarewaveOscillator(st) *  TriangleOscillator(st);
+	  }
+	  else
+	  {
+		color = texture2D( uSampler, gl_FragCoord.xy / resolution ) ;
+	  }
+	  
+	  
+	  vec4 finalCol = vec4(color * brightness);
+	  if(isInversion)
+	  {
+	    finalCol = vec4(vec3(1) - finalCol.rgb, 1.0);
+	  }
+	  if(isKeying)
+	  {//use threshold for keying
+	  //if r is greater than 0.5, invert the color
+		finalCol =  finalCol.r > 0.5 ? vec4(vec3(1) - finalCol.rgb, 1.0): finalCol;
+	  }
+	  if(isNoise)
+	  {
+	   vec2 pos = vec2(st*time);
+	   finalCol = finalCol * noise(pos);
+	  }
+	 
+	  gl_FragColor = vec4(finalCol.rgb * rgbControl, 1.0);
+    }
+  </script>
+
+
+  <script type='text/javascript'>
+    // "global" variables
+    let gl, uTime, uDisType, video, textureLoaded, texture, UBrightness, UIsInversion, UIsKeying, URGBControl, UIsNoise
+
+
+function getVideo() 
+{
+  video = document.createElement( 'video' )
+
+  navigator.mediaDevices.getUserMedia({
+    video:true
+  }).then( stream => { 
+    video.srcObject = stream
+    video.play()
+    makeTexture()
+  }) 
+    
+  return video
+}
+
+
+
+function makeTexture()
+ {
+  // create an OpenGL texture object
+  texture = gl.createTexture()
+  
+  // this tells OpenGL which texture object to use for subsequent operations
+  gl.bindTexture( gl.TEXTURE_2D, texture )
+    
+  // since canvas draws from the top and shaders draw from the bottom, we
+  // have to flip our canvas when using it as a shader.
+  gl.pixelStorei( gl.UNPACK_FLIP_Y_WEBGL, true )
+
+  // how to map when texture element is more than one pixel
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR )
+  // how to map when texture element is less than one pixel
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR )
+  
+  // you must have these properties defined for the video texture to
+  // work correctly
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE )
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE )
+  
+  // let our render loop know when the texture is ready
+  textureLoaded = true
+}
+
+    window.onload = function() 
+	{
+      const canvas = document.getElementById( 'gl' )
+      gl = canvas.getContext( 'webgl' )
+      canvas.width = window.innerWidth
+      canvas.height = window.innerHeight
+
+      // define drawing area of canvas. bottom corner, width / height
+      gl.viewport( 0,0,gl.drawingBufferWidth, gl.drawingBufferHeight )
+
+      // create a buffer object to store vertices
+      const buffer = gl.createBuffer()
+
+      // point buffer at graphic context's ARRAY_BUFFER
+      gl.bindBuffer( gl.ARRAY_BUFFER, buffer )
+
+      const triangles = new Float32Array([
+        -1, -1,
+        1,  -1,
+        -1, 1,
+        -1, 1,
+        1, -1,
+        1, 1
+      ])
+
+      // initialize memory for buffer and populate it. Give
+      // open gl hint contents will not change dynamically.
+      gl.bufferData( gl.ARRAY_BUFFER, triangles, gl.STATIC_DRAW )
+
+      // create vertex shader
+      let shaderScript = document.getElementById('vertex')
+      let shaderSource = shaderScript.text
+      const vertexShader = gl.createShader( gl.VERTEX_SHADER )
+      gl.shaderSource( vertexShader, shaderSource );
+      gl.compileShader( vertexShader )
+
+      // create fragment shader
+      shaderScript = document.getElementById('fragment')
+      shaderSource = shaderScript.text
+      const fragmentShader = gl.createShader( gl.FRAGMENT_SHADER )
+      gl.shaderSource( fragmentShader, shaderSource );
+      gl.compileShader( fragmentShader )
+
+      // create shader program
+      const program = gl.createProgram()
+      gl.attachShader( program, vertexShader )
+      gl.attachShader( program, fragmentShader )
+      gl.linkProgram( program )
+      gl.useProgram( program )
+      
+      /* ALL ATTRIBUTE/UNIFORM INITIALIZATION MUST COME AFTER 
+      CREATING/LINKING/USING THE SHADER PROGAM */
+      
+      // find a pointer to the uniform "time" in our fragment shader
+      uTime = gl.getUniformLocation( program, 'time' ) 
+      const uRes = gl.getUniformLocation( program, 'resolution' )
+      gl.uniform2f( uRes, window.innerWidth, window.innerHeight )
+
+	 uDisType = gl.getUniformLocation( program, 'disType' ) 
+	UBrightness = gl.getUniformLocation( program, 'brightness' ) 
+	UIsInversion = gl.getUniformLocation( program, 'isInversion' ) 
+	UIsKeying = gl.getUniformLocation( program, 'isKeying' ) 
+	URGBControl = gl.getUniformLocation( program, 'rgbControl' ) 
+	UIsNoise = gl.getUniformLocation( program, 'isNoise' ) 
+	
+      // get position attribute location in shader
+      const position = gl.getAttribLocation( program, 'a_position' )
+      // enable the attribute
+      gl.enableVertexAttribArray( position )
+      // this will point to the vertices in the last bound array buffer.
+      // In this example, we only use one array buffer, where we're storing 
+      // our vertices
+      gl.vertexAttribPointer( position, 2, gl.FLOAT, false, 0,0 )
+      
+	  //
+	  document.onkeypress = handleKeyPress
+	  getVideo()
+      render()
+    }
+
+	function handleKeyPress(event) 
+	{
+		switch(String.fromCharCode(event.keyCode))
+		{
+		
+			case '1':
+			 keyType = 1; 
+			break;
+				case '2':
+			 keyType = 2; 
+			break;
+				case '3':
+			 keyType = 3; 
+			break;
+			case '4':
+			 keyType = 4; 
+			break;
+		
+			case 'e':
+			brightness -= 0.1;
+			if(brightness < 0)
+			brightness = 0;
+			break;
+			case 'E':
+			brightness += 0.1;
+			break;
+			
+			case 'I':
+			inversion = !inversion; 
+			break;
+			case 'K':
+			keying = !keying; 
+			break;
+			case 'N':
+			noise = !noise; 
+			break;
+			
+			case 'R':
+			rFactor += 0.1;
+			break;
+			case 'r':
+			rFactor -= 0.1;
+			if(rFactor < 0)
+			rFactor = 0;
+			break;
+			
+			case 'G':
+			gFactor += 0.1;
+			break;
+			case 'g':
+			gFactor -= 0.1;
+			if(gFactor < 0)
+			gFactor = 0;
+			break;
+			
+			case 'B':
+			bFactor += 0.1;
+			break;
+			case 'b':
+			bFactor -= 0.1;
+			if(bFactor < 0)
+			bFactor = 0;
+			break;
+			
+		}
+	}
+    // keep track of time via incremental frame counter
+    let time = 0
+	let keyType = 0
+	let  brightness = 1;
+	let inversion = false;
+	let keying = false;
+	let rFactor = 1;
+	let bFactor = 1;
+	let gFactor = 1;
+	let noise = false;
+    function render() 
+	{
+      // schedules render to be called the next time the video card requests 
+      // a frame of video
+      window.requestAnimationFrame( render )
+      
+      // update time on CPU and GPU
+	    // check to see if video is playing and the texture has been created
+  if( textureLoaded === true ) 
+  {
+    // send texture data to GPU    
+    gl.texImage2D( 
+      gl.TEXTURE_2D,    // target: you will always want gl.TEXTURE_2D
+      0,                // level of detail: 0 is the base
+      gl.RGBA, gl.RGBA, // color formats
+      gl.UNSIGNED_BYTE, // type: the type of texture data; 0-255
+      video             // pixel source: could also be video or image
+    )
+    
+    // draw triangles using the array buffer from index 0 to 6 (6 is count)
+    gl.drawArrays( gl.TRIANGLES, 0, 6 )
+  }
+      time++
+      gl.uniform1f( uTime, time )
+		gl.uniform1i( uDisType, keyType )
+		 gl.uniform1f( UBrightness, brightness )
+		 gl.uniform1i( UIsInversion, inversion )
+		 gl.uniform1i( UIsKeying, keying )
+		  gl.uniform3fv( URGBControl, [rFactor, bFactor, gFactor ] )
+		  gl.uniform1i( UIsNoise, noise )
+    }
+  </script>
+
+</html>
