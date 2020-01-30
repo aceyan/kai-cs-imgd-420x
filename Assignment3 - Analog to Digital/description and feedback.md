@@ -1,5 +1,4 @@
 # Description
-
-
+I got some incredible visual results from playing around with Vidiot in the digital lab. What's more is that I learned principles of modulation with oscillator input behind those crazy effects.  I was trying to use my understanding to reproduce the visual results of the experiment. Also, I want to simulate the retro visual effects on the CRT display. I implemented the video input for the camera and displayed it as a texture in my demo.  I created Sine oscillator, Square wave oscillator, Triangle oscillator, and Noise to modulate the video in different ways. They've done a good job of emulating the pathing of 'Sine Out', 'Square Out', 'Triangle Out' and "Noise out" in vidiot. In addition, I added functions of Brightness control, Luma inversion, Luma Keying and RGB controls in my demo, which are used to implement the functions of corresponding knobs on Vidiot.  Finally, I added up all of these effects, and I got something like this [result form digital lab](./pictures/12.jpg).
 # Feedback
 
