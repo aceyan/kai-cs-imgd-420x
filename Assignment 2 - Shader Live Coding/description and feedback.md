@@ -3,9 +3,8 @@ I am a huge fan of Initial D (a car racing animation). So, I picked one of the e
 Firstly, I used a sin curve in my scene, which is to simulate the winding road on the mountain. Also, I changed the shape of the curve and the color of the screen according to the rhythm of the music to make it cooler. I used discard command to clip some parts of the scene to create a feeling like driving on a highway at night. With the inspiration from some car racing games, I created the second stage on my scene. I added the radial blur effect which is a widely used post-processing to create a sense of speed, by using the backbuffer provided by the Force. And, I spun the UV and make the sample like a circle(somewhat). The center of the radial blur is following the position of the mouse.
 
 # Feedback
-I got some feedback from John.
-1. The interactive effect with mouse position is not that recognizable. This is not what I expected. But it is true. He didn't notice the mouse interaction until I told him.
-2. The change in the thickness of the line is not obvious enough. He suggested making the change more dramatic according to the music.
-3. The picture and music match very well, can feel the sense of speed from this demo. I am glad to hear this.
-4. The pictures and music reminded him of the sense of racing and drifting in the Initial D. It turns out he is also a big fan of Initial D and he can get all the feeling I try to convey, that is great.
-5. The color scheme is like the taillight of a car, which is very cool. This is beyond my expectation in which I want to create a simulation of a winding road in my demo. This is the beauty of artistic creation; everyone has different interpretations for one work of art.
+I got some feedbacks from John.
+1. This demo brings authentic Analog Video experience, tt restores the experiment results in vidiot very well.
+2. The keyborad input is amazing. It is so convenient for users to try different combinations of oscillators and effects.
+3. It does remind John of retro visual effects on the CRT display.
+4. But it only has horizontal modulation, it would be better to add some vertical modulations, or try to mimic the diamond input on vidiot, which might combine to create more unexpected effects. 
