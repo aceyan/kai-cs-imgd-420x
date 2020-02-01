@@ -25,7 +25,6 @@
     #endif
     
     uniform mediump float time;
-	uniform int disType;
     uniform mediump vec2 resolution;
     uniform sampler2D uSampler;
 	uniform bool isInversion;
@@ -33,8 +32,13 @@
 	uniform bool isNoise;
 	uniform mediump float brightness;
 	uniform vec3 rgbControl;
-	
-	
+	uniform bool sineOscillatorMod;
+	uniform bool squareOscillatorMod;
+	 uniform bool triangleOscillatorMod;
+	 uniform mediump float sineFrequency;
+	 uniform  mediump float squareFrequency;
+	 uniform mediump float triangleFrequency;
+	 
 	// 2D Random
 float random (in vec2 st) 
 {
@@ -68,9 +72,9 @@ float noise (in vec2 st)
 }
 	
 
-vec4 sineOscillators(vec2 st)
+vec4 SineOscillators(vec2 st)
 {
-	float y = 0.5*sin(75.0 * st.x + time / 100.0) + 0.5;
+	float y = 0.5*sin(sineFrequency * st.x + time / 100.0) + 0.5;
 
     vec3 color = vec3(y);
     
@@ -79,7 +83,7 @@ vec4 sineOscillators(vec2 st)
 	
 vec4 SquarewaveOscillator(vec2 st)
 {
-	float y = 0.5*sin(75.0 * st.x + time / 50.0) + 0.5;
+	float y = 0.5*sin(squareFrequency * st.x + time / 50.0) + 0.5;
 	y = step(0.5,y);
     vec3 color = vec3(y);
 
@@ -90,7 +94,7 @@ vec4 SquarewaveOscillator(vec2 st)
 vec4 TriangleOscillator(vec2 st)
 {
 //    y = abs(mod(x+1.0, 2.0 * 1.0) - 1.0);
-	float cycle = 0.05;
+	float cycle = triangleFrequency / 100.0;
 	float y = abs(mod(st.x + time / 1000.0, 2.0 * cycle) - cycle) * 1.0/cycle;
 	
     vec3 color = vec3(y);
@@ -101,33 +105,22 @@ vec4 TriangleOscillator(vec2 st)
 	{
 	vec2 st = vec2(gl_FragCoord.x / resolution.x,gl_FragCoord.y / resolution.y);
 	vec4 color;
-      color = vec4( 
-         st.x,
-		 st.y,
-        mod( time/100., 1. ), 
-        1.0 
-      );
+       
+	  color = texture2D( uSampler, gl_FragCoord.xy / resolution ) ;
 	  
-	  if(disType == 1)
+	  if(sineOscillatorMod)
 	  {
-	    color =  texture2D( uSampler, gl_FragCoord.xy / resolution ) * sineOscillators(st);
+	    color *= SineOscillators(st);
 	  }
-	  else if(disType == 2)
+	  if(squareOscillatorMod)
 	  {
-		color =  texture2D( uSampler, gl_FragCoord.xy / resolution ) * SquarewaveOscillator(st);
+		color *= SquarewaveOscillator(st);
 	  }
-	   else if(disType == 3)
+	  if(triangleOscillatorMod)
 	  {
-		color =  texture2D( uSampler, gl_FragCoord.xy / resolution ) * TriangleOscillator(st);
+		color *=  TriangleOscillator(st);
 	  }
-	  else if(disType == 4)
-	  {
-	  color =  texture2D( uSampler, gl_FragCoord.xy / resolution ) * sineOscillators(st) * SquarewaveOscillator(st) *  TriangleOscillator(st);
-	  }
-	  else
-	  {
-		color = texture2D( uSampler, gl_FragCoord.xy / resolution ) ;
-	  }
+	 
 	  
 	  
 	  vec4 finalCol = vec4(color * brightness);
@@ -151,11 +144,13 @@ vec4 TriangleOscillator(vec2 st)
   </script>
 
 
-
+<script type="text/javascript" src="dat.gui.js"></script>
   <script type='text/javascript'>
     // "global" variables
-    let gl, uTime, uDisType, video, textureLoaded, texture, UBrightness, UIsInversion, UIsKeying, URGBControl, UIsNoise
-
+    let gl, uTime, video, textureLoaded, texture, UBrightness, UIsInversion, UIsKeying, URGBControl, UIsNoise
+	let USineOscillatorMod , USquareOscillatorMod, UTriangleOscillatorMod
+	var myGui
+	let USineFrequency, USquareFrequency, UTriangleFrequency
 
 function getVideo() 
 {
@@ -200,8 +195,43 @@ function makeTexture()
   textureLoaded = true
 }
 
+var MyGUI = function() {
+  this.name = 'Mini - assignment';
+  this.sineOscillator = false;
+  this.sineFrequency = 75.0;
+  this.squareOscillator = false;
+  this.squareFrequency = 75.0;
+   this.triangleOscillator = false;
+   this.triangleFrequency = 50.0;
+   
+   this.brightness = 1;
+    this.inversion = false;
+    this.keying = false;
+	this.rFactor = 1;
+	this.bFactor = 1;
+	this.gFactor = 1;
+	this.noise = false;
+};
+
     window.onload = function() 
 	{
+	 myGui = new MyGUI();
+  var gui = new dat.GUI();
+  gui.add(myGui, 'name');
+  gui.add(myGui, 'sineOscillator');
+  gui.add(myGui, 'sineFrequency', 0, 100);
+  gui.add(myGui, 'squareOscillator');
+  gui.add(myGui, 'squareFrequency', 0, 100);
+  gui.add(myGui, 'triangleOscillator');
+  gui.add(myGui, 'triangleFrequency', 0, 100);
+	gui.add(myGui, 'brightness', 0, 5);
+	gui.add(myGui, 'inversion');
+	gui.add(myGui, 'keying');
+	gui.add(myGui, 'rFactor', 0, 5);
+	gui.add(myGui, 'bFactor', 0, 5);
+	gui.add(myGui, 'gFactor', 0, 5);
+	gui.add(myGui, 'noise');
+	
       const canvas = document.getElementById( 'gl' )
       gl = canvas.getContext( 'webgl' )
       canvas.width = window.innerWidth
@@ -258,12 +288,19 @@ function makeTexture()
       const uRes = gl.getUniformLocation( program, 'resolution' )
       gl.uniform2f( uRes, window.innerWidth, window.innerHeight )
 
-	 uDisType = gl.getUniformLocation( program, 'disType' ) 
 	UBrightness = gl.getUniformLocation( program, 'brightness' ) 
 	UIsInversion = gl.getUniformLocation( program, 'isInversion' ) 
 	UIsKeying = gl.getUniformLocation( program, 'isKeying' ) 
 	URGBControl = gl.getUniformLocation( program, 'rgbControl' ) 
 	UIsNoise = gl.getUniformLocation( program, 'isNoise' ) 
+	//
+	USineOscillatorMod = gl.getUniformLocation( program, 'sineOscillatorMod' ) 
+	USquareOscillatorMod = gl.getUniformLocation( program, 'squareOscillatorMod' ) 
+	UTriangleOscillatorMod = gl.getUniformLocation( program, 'triangleOscillatorMod' ) 
+	
+	USineFrequency = gl.getUniformLocation( program, 'sineFrequency' ) 
+	USquareFrequency = gl.getUniformLocation( program, 'squareFrequency' ) 
+	UTriangleFrequency = gl.getUniformLocation( program, 'triangleFrequency' ) 
 	
       // get position attribute location in shader
       const position = gl.getAttribLocation( program, 'a_position' )
@@ -274,81 +311,18 @@ function makeTexture()
       // our vertices
       gl.vertexAttribPointer( position, 2, gl.FLOAT, false, 0,0 )
       
-	  //
-	  document.onkeypress = handleKeyPress
+
 	  getVideo()
+	  
+	  //
+	  
+	  
       render()
     }
-
-	function handleKeyPress(event) 
-	{
-		switch(String.fromCharCode(event.keyCode))
-		{
-		
-			case '1':
-			 keyType = 1; 
-			break;
-				case '2':
-			 keyType = 2; 
-			break;
-				case '3':
-			 keyType = 3; 
-			break;
-			case '4':
-			 keyType = 4; 
-			break;
-		
-			case 'e':
-			brightness -= 0.1;
-			if(brightness < 0)
-			brightness = 0;
-			break;
-			case 'E':
-			brightness += 0.1;
-			break;
-			
-			case 'I':
-			inversion = !inversion; 
-			break;
-			case 'K':
-			keying = !keying; 
-			break;
-			case 'N':
-			noise = !noise; 
-			break;
-			
-			case 'R':
-			rFactor += 0.1;
-			break;
-			case 'r':
-			rFactor -= 0.1;
-			if(rFactor < 0)
-			rFactor = 0;
-			break;
-			
-			case 'G':
-			gFactor += 0.1;
-			break;
-			case 'g':
-			gFactor -= 0.1;
-			if(gFactor < 0)
-			gFactor = 0;
-			break;
-			
-			case 'B':
-			bFactor += 0.1;
-			break;
-			case 'b':
-			bFactor -= 0.1;
-			if(bFactor < 0)
-			bFactor = 0;
-			break;
-			
-		}
-	}
+	
     // keep track of time via incremental frame counter
     let time = 0
-	let keyType = 0
+	
 	let  brightness = 1;
 	let inversion = false;
 	let keying = false;
@@ -380,33 +354,17 @@ function makeTexture()
   }
       time++
       gl.uniform1f( uTime, time )
-		gl.uniform1i( uDisType, keyType )
-		 gl.uniform1f( UBrightness, brightness )
-		 gl.uniform1i( UIsInversion, inversion )
-		 gl.uniform1i( UIsKeying, keying )
-		  gl.uniform3fv( URGBControl, [rFactor, bFactor, gFactor ] )
-		  gl.uniform1i( UIsNoise, noise )
+		 gl.uniform1f( UBrightness, myGui.brightness )
+		 gl.uniform1i( UIsInversion, myGui.inversion )
+		 gl.uniform1i( UIsKeying, myGui.keying )
+		  gl.uniform3fv( URGBControl, [myGui.rFactor, myGui.bFactor, myGui.gFactor ] )
+		  gl.uniform1i( UIsNoise, myGui.noise )
+		  gl.uniform1i( USineOscillatorMod, myGui.sineOscillator )
+		  gl.uniform1f( USineFrequency, myGui.sineFrequency )
+		  gl.uniform1i( USquareOscillatorMod, myGui.squareOscillator )
+		   gl.uniform1f( USquareFrequency, myGui.squareFrequency )
+		  gl.uniform1i( UTriangleOscillatorMod, myGui.triangleOscillator )
+		   gl.uniform1f( UTriangleFrequency, myGui.triangleFrequency )
     }
   </script>
-<script type="text/javascript" src="dat.gui.js"></script>
-<script type="text/javascript">
-    
-var FizzyText = function() {
-  this.message = 'dat.gui';
-  this.speed = 0.8;
-  this.displayOutline = false;
-  this.explode = function() {};
-  // Define render logic ...
-};
-
-window.onload = function() {
-  var text = new FizzyText();
-  var gui = new dat.GUI();
-  gui.add(text, 'message');
-  gui.add(text, 'speed', -5, 5);
-  gui.add(text, 'displayOutline');
-  gui.add(text, 'explode');
-};
-    
-</script>
 </html>
