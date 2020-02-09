@@ -24,3 +24,4 @@ This is Kai's github page for cs-imgd-420x class! welcome!
 - **index.html** (html file for Automata - assignment )
 - **website URL.md** (URL of the live running website for Automata - assignment : https://aceyan.github.io/kai-cs-imgd-420x/Automata%20-%20Assignment/index.html)
 - **dat.gui.js** ( js file from dat.js )
+- **ReadMe.md** ( ReadMe file, read me! )
