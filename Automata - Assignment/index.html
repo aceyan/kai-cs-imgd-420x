@@ -24,14 +24,18 @@ precision mediump float;
 
 uniform float time;
 uniform vec2 resolution;
+uniform bool colorMode;
 
 // simulation texture state, swapped each frame
 uniform sampler2D state;
 	varying  vec2 texCoord;
 // look up individual cell values 
 int get(int x, int y) {
+//make it toroidal!
+	 vec2 uv = texCoord +  vec2(x, y)  / resolution;
+	 uv = mod(uv, 1.0);
   return int( 
-    texture2D( state, texCoord +  vec2(x, y)  / resolution ).r 
+    texture2D( state, uv ).r 
   );
 }
 
@@ -48,11 +52,13 @@ void main() {
   
   if (sum == 3) {
     // ideal # of neighbors... if cell is living, stay alive, if it is dead, come to life!
-    gl_FragColor = vec4( 1. );
+    gl_FragColor =  colorMode? vec4( 1.0, sin(0.3 * time),cos(.5*time), 1 ) : gl_FragColor = vec4( 1.0 );
+	  
   } else if (sum == 2) {
     // maintain current state
     float current = float( get(0, 0) );
-    gl_FragColor = vec4( vec3( current ), 1.0 );
+    gl_FragColor = colorMode?  vec4( vec3( current , sin(0.5 * time),cos(.7 *time)), 1.0 ) : vec4( vec3( current), 1.0 );
+	 // gl_FragColor = vec4( vec3( current), 1.0 );
   } else {
     // over-population or lonliness... cell dies
     gl_FragColor = vec4( vec3( 0.0 ), 1.0 );
@@ -74,21 +80,41 @@ void main() {
     }
   </script>
 
+<script type="text/javascript" src="dat.gui.js"></script>
   <script type='text/javascript'>
     let gl, framebuffer,
         simulationProgram, drawProgram,
         uTime, uSimulationState,
         textureBack, textureFront,
         dimensions = { width:null, height:null }
+   var myGui
+   let UcolorMode
+
+var MyGUI = function() {
+  this.name = 'Automata - assignment';
+  this.frameRate = 10;
+  this.colorMode = false;
+};
 
     window.onload = function() {
+	
+	
+	
+	myGui = new MyGUI();
+  var gui = new dat.GUI();
+  gui.add(myGui, 'name');
+  gui.add(myGui, 'frameRate', 0, 60);
+  gui.add(myGui, 'colorMode');
+
+	
+	
       const canvas = document.getElementById( 'gl' )
       gl = canvas.getContext( 'webgl' )
       canvas.width = dimensions.width = window.innerWidth
       canvas.height = dimensions.height = window.innerHeight
 	  
-	  textureWidth = 100;
-	  textureLength = 100;
+	  textureWidth = 160;
+	  textureLength = 90;
       
       // define drawing area of webgl canvas. bottom corner, width / height
       // XXX can't remember why we need the *2!
@@ -98,10 +124,13 @@ void main() {
       makeShaders()
       makeTextures()
 	  setInitialState()
+	  lastTime =  Date.now();
     }
 	
 	function poke( x, y, value, texture ) {   
-  gl.bindTexture( gl.TEXTURE_2D, texture )
+	if(x < textureWidth && y < textureLength)
+	{
+		  gl.bindTexture( gl.TEXTURE_2D, texture )
   
   // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/texSubImage2D
   gl.texSubImage2D( 
@@ -111,34 +140,88 @@ void main() {
     gl.RGBA, gl.UNSIGNED_BYTE,
     // is supposed to be a typed array
     new Uint8Array([ value, value, value, 255 ])
-  )
+  );
+	}
+
 }
 
-	function createBlock( x, y, value, texture ) {   
+	function create_Block( x, y, value, texture ) {   
   gl.bindTexture( gl.TEXTURE_2D, texture )
   
   for( i = 0; i < 2; i++ ) 
   {
     for(j = 0; j < 2; j++)
 	{
-	
-		gl.texSubImage2D( 
-		gl.TEXTURE_2D, 0, 
-		// x offset, y offset, width, height
-		x + i, y + j, 1, 1,
-		gl.RGBA, gl.UNSIGNED_BYTE,
-		// is supposed to be a typed array
-		new Uint8Array([ value, value, value, 255 ])
-	  );
+		poke(x + i, y + j, value, texture);
 	}
-   
-  
   }
+}
 
+function create_Beehive(x, y, value, texture )
+{
+	poke(x, y, value, texture);
+	poke(x + 1, y, value, texture);
+	poke(x - 1, y - 1, value, texture);
+	poke(x , y - 2, value, texture);
+	poke(x + 1, y - 2, value, texture);
+	poke(x + 2, y - 1, value, texture);
+}
+
+
+function create_Blinker(x, y, value, texture)
+{
+	poke(x, y, value, texture);
+	poke(x , y - 1, value, texture);
+	poke(x , y - 2, value, texture);
+}
+
+function create_Toad(x, y, value, texture)
+{
+    for(j = 0; j < 3; j++)
+	{
+		poke(x + j, y, value, texture);
+	}
+	  for(j = 0; j < 3; j++)
+	{
+		poke(x + j - 1, y - 1, value, texture);
+	}
+}
+
+function create_Beacon(x, y, value, texture)
+{
+	create_Block(x, y, value, texture);
+	create_Block(x + 2, y + 2, value, texture);
+}
+
+function create_R_pentomino(x, y, value, texture)
+{
+	create_Blinker(x, y, value, texture)
+	poke(x +  1, y , value, texture);
+	poke(x - 1, y - 1, value, texture);
+}
+
+function create_Glider(x, y, value, texture)
+{
+	create_Blinker(x, y, value, texture)
+	poke(x -  2, y - 1 , value, texture);
+	poke(x -  1, y - 2 , value, texture);
+}
+
+function create_LWSS(x, y, value, texture)
+{
+  var xx = x;
+  var yy = y;
+  
+  create_Block(xx, yy, value, texture);
+  create_Block(xx - 1, yy - 1, value, texture);
+  create_Blinker(xx + 2, yy, value, texture);
+  poke(xx +  3, yy - 1, value, texture);
+  poke(xx +  1, yy - 2 , value, texture);
 }
 
 
 function setInitialState() {
+/*
   for( i = 0; i < textureWidth ; i++ ) {
     for( j = 0; j < textureLength; j++ ) {
       if( Math.random() > .9 ) {
@@ -148,6 +231,10 @@ function setInitialState() {
     }
   }
 }
+*/
+create_LWSS( 10, 10, 255, textureBack )
+
+}
     
     function makeBuffer() {
       // create a buffer object to store vertices
@@ -156,14 +243,6 @@ function setInitialState() {
       // point buffer at graphic context's ARRAY_BUFFER
       gl.bindBuffer( gl.ARRAY_BUFFER, buffer )
 
-     /* const triangles = new Float32Array([
-        -1, -1, 0, 0,
-         1, -1, 1, 0,
-        -1,  1,  0, 1,
-        -1,  1,  0, 1,
-         1, -1,  1, 0,
-         1,  1,  1, 1 
-      ])*/
 	  
 	       const triangles = new Float32Array([
          1,  1,  1, 1 ,
@@ -242,7 +321,8 @@ function setInitialState() {
       uTime = gl.getUniformLocation( simulationProgram, 'time' )
       
       uSimulationState = gl.getUniformLocation( simulationProgram, 'state' )
-
+	  UcolorMode = gl.getUniformLocation( simulationProgram, 'colorMode' ) 
+	  
       position = gl.getAttribLocation( simulationProgram, 'a_position' )
       gl.enableVertexAttribArray( simulationProgram )
             gl.vertexAttribPointer( position, 4, gl.FLOAT, false, 0,0 )
@@ -286,16 +366,33 @@ function setInitialState() {
 
     // keep track of time via incremental frame counter
     let time = 0
+	let lastTime = 0;
+	let acumulateTime = 0;
     function render() {
       // schedules render to be called the next time the video card requests 
       // a frame of video
+	 
+	  
       window.requestAnimationFrame( render )
+	  
+	   var now = Date.now();
+	  acumulateTime +=  now - lastTime;
+	  lastTime = now;
+	  
+	  var frameTime = 1.0 / myGui.frameRate * 1000;
+	  if(acumulateTime < frameTime)
+	  {
+	    return;
+	  }
+	  acumulateTime = 0;
+	  
       
       // use our simulation shader
       gl.useProgram( simulationProgram )  
       // update time on CPU and GPU
       time++
       gl.uniform1f( uTime, time )     
+	   gl.uniform1i( UcolorMode, myGui.colorMode )
       gl.bindFramebuffer( gl.FRAMEBUFFER, framebuffer )
       // use the framebuffer to write to our texFront texture
       gl.framebufferTexture2D( gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, textureFront, 0 )
