@@ -52,7 +52,7 @@ void main() {
   
   if (sum == 3) {
     // ideal # of neighbors... if cell is living, stay alive, if it is dead, come to life!
-    gl_FragColor =  colorMode? vec4( 1.0, sin(0.3 * time),cos(.5*time), 1 ) : gl_FragColor = vec4( 1.0 );
+    gl_FragColor =  colorMode? vec4( 1.0, sin(0.3 * time * texCoord.x),cos(.5*time * texCoord.y), 1 ) : gl_FragColor = vec4( 1.0 );
 	  
   } else if (sum == 2) {
     // maintain current state
@@ -92,7 +92,7 @@ void main() {
 
 var MyGUI = function() {
   this.name = 'Automata - assignment';
-  this.frameRate = 10;
+  this.frameRate = 0.5;
   this.colorMode = false;
 };
 
@@ -145,14 +145,14 @@ var MyGUI = function() {
 
 }
 
-	function create_Block( x, y, value, texture ) {   
+function create_Block( x, y, value, texture ) {   
   gl.bindTexture( gl.TEXTURE_2D, texture )
   
-  for( i = 0; i < 2; i++ ) 
+  for(var i = 0; i < 2; i++ ) 
   {
-    for(j = 0; j < 2; j++)
+    for( var j = 0; j < 2; j++)
 	{
-		poke(x + i, y + j, value, texture);
+		poke(x + i, y - j, value, texture);
 	}
   }
 }
@@ -167,6 +167,13 @@ function create_Beehive(x, y, value, texture )
 	poke(x + 2, y - 1, value, texture);
 }
 
+function create_Tub(x, y, value, texture)
+{
+   poke(x + 1, y, value, texture);
+   poke(x - 1, y, value, texture);
+   poke(x, y + 1, value, texture);
+   poke(x, y - 1, value, texture);
+}
 
 function create_Blinker(x, y, value, texture)
 {
@@ -177,11 +184,11 @@ function create_Blinker(x, y, value, texture)
 
 function create_Toad(x, y, value, texture)
 {
-    for(j = 0; j < 3; j++)
+    for(var j = 0; j < 3; j++)
 	{
 		poke(x + j, y, value, texture);
 	}
-	  for(j = 0; j < 3; j++)
+	  for(var j = 0; j < 3; j++)
 	{
 		poke(x + j - 1, y - 1, value, texture);
 	}
@@ -209,31 +216,85 @@ function create_Glider(x, y, value, texture)
 
 function create_LWSS(x, y, value, texture)
 {
-  var xx = x;
-  var yy = y;
   
-  create_Block(xx, yy, value, texture);
-  create_Block(xx - 1, yy - 1, value, texture);
-  create_Blinker(xx + 2, yy, value, texture);
-  poke(xx +  3, yy - 1, value, texture);
-  poke(xx +  1, yy - 2 , value, texture);
+  create_Block(x, y, value, texture);
+  create_Block(x - 1, y - 1, value, texture);
+  create_Blinker(x + 2, y - 1, value, texture);
+  poke(x +  3, y - 2, value, texture);
+  poke(x +  1, y - 3 , value, texture);
+}
+
+function create_GosperGliderGun(x, y, value, texture)
+{
+	//tow cube
+	create_Block(x, y, value, texture);
+	create_Block(x + 34, y + 2, value, texture);
+	
+	//gun1
+	create_Blinker(x + 10, y, value, texture);
+	poke(x + 10+ 1, y + 1, value, texture);
+	poke(x + 10 + 1, y - 3 , value, texture);
+	//
+	poke(x + 10 + 1 + 1, y + 1 + 1, value, texture);
+	poke(x + 10 + 1 + 2, y + 1 + 1, value, texture);
+	//
+	poke(x + 10 + 1 + 1,  y - 3 - 1, value, texture);
+	poke(x + 10 + 1 + 2,  y - 3 - 1, value, texture);
+	//
+	
+	
+	create_Blinker(x + 16, y, value, texture);
+	poke(x + 16 - 1,  y + 1, value, texture);
+	poke(x + 16 - 1,  y - 3, value, texture);
+	//
+	poke(x + 16 + 1,  y - 1, value, texture);
+	poke(x + 16 - 2,  y - 1, value, texture);
+	
+	//gun2
+	create_Blinker(x + 34 - 14, y + 2, value, texture);
+	create_Blinker(x + 34 - 14 + 1, y + 2, value, texture);
+	//
+	poke(x + 34 - 14 + 2, y + 2 + 1, value, texture);
+	poke(x + 34 - 14 + 2, y + 2 - 3, value, texture);
+	//
+	poke(x + 34 - 14 + 2 + 2, y + 2 + 1, value, texture);
+	poke(x + 34 - 14 + 2 + 2, y + 2 + 1 + 1, value, texture);
+	//
+	poke(x + 34 - 14 + 2 + 2, y + 2 - 3, value, texture);
+	poke(x + 34 - 14 + 2 + 2, y + 2 - 3 - 1, value, texture);
 }
 
 
 function setInitialState() {
-/*
-  for( i = 0; i < textureWidth ; i++ ) {
-    for( j = 0; j < textureLength; j++ ) {
-      if( Math.random() > .9 ) {
-        poke( i, j, 255, textureBack )
-		//createBlock( i, j, 255, textureBack )
-      }
-    }
-  }
-}
-*/
-create_LWSS( 10, 10, 255, textureBack )
 
+
+
+    for(var i = 0; i < 8 ; i++ )
+	{
+	//create_Glider ( i * 20 - 5, 10 + 10, 255, textureBack)
+	  create_Block ( i * 20 + 10, 10, 255, textureBack)
+	  create_Blinker ( i * 20 + 10, 5, 255, textureBack)
+	}
+	
+	create_Glider ( i * 40 - 5, 10 + 5, 255, textureBack)
+	
+		
+	create_Tub	( 80, 40, 255, textureBack)
+	create_Beehive 	( 80, 50, 255, textureBack)
+	create_Toad 	( 80, 60, 255, textureBack)
+	
+	create_Beacon ( 60, 60, 255, textureBack)
+	create_Beacon ( 60 + 3, 60 - 3, 255, textureBack)
+	create_Beacon ( 60, 40, 255, textureBack)
+	
+	
+	create_LWSS (90,  40, 255, textureBack)
+	create_LWSS (90,  50, 255, textureBack)
+	create_Glider (90,  60, 255, textureBack)
+	
+	//create_R_pentomino (  20 - 5, 10 + 30, 255, textureBack)
+	
+	create_GosperGliderGun( 20, 80 , 255, textureBack)
 }
     
     function makeBuffer() {
