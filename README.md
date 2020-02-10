@@ -28,6 +28,6 @@ This is Kai's github page for cs-imgd-420x class! welcome!
 
 ### Reaction Diffusion tutorial:
 - **index.html** (html file for Reaction Diffusion tutorial assignment )
-- **website URL.md** (URL of the live running website for Automata - assignment : https://aceyan.github.io/kai-cs-imgd-420x/Reaction%20Diffusion%20tutorial/index.html)
+- **website URL.md** (URL of the live running website for Reaction Diffusion tutorial assignment : https://aceyan.github.io/kai-cs-imgd-420x/Reaction%20Diffusion%20tutorial/index.html)
 - **dat.gui.js** ( js file from dat.js )
 - **ReadMe.md** ( ReadMe file, read me! )
