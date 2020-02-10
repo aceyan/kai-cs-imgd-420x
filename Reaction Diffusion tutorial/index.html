@@ -6,9 +6,7 @@
       margin:0;
       background:black; 
     } 
-    canvas{ 
-      width:100%; height:100%; position:relative; 
-    } 
+
   </style> 
 </head>
 
@@ -102,7 +100,6 @@
    var myGui
 	let UfeedRate, UkillRate, UdA, UdB, Udiffusion
 
-
 window.onload = function() { 
 var MyGUI = function() {
   this.name = 'Reaction Diffusion tutorial';
@@ -111,6 +108,7 @@ var MyGUI = function() {
   this.diffusionRateA = 0.53;
   this.diffusionRateB = 0.82;
   this.diffusionBchangeAcrossTheGrid = true;
+  this.reactionSpeed = 10;
    this.reset = function() { reset() };
 };
 myGui = new MyGUI();
@@ -121,11 +119,14 @@ myGui = new MyGUI();
   gui.add(myGui, 'diffusionRateA', 0,1);
   gui.add(myGui, 'diffusionRateB', 0, 1);
   gui.add(myGui, 'diffusionBchangeAcrossTheGrid');
+ gui.add(myGui, 'reactionSpeed', 1, 20);
   gui.add(myGui, 'reset');
 
     let canvas = document.querySelector( 'canvas' ) 
-    canvas.width = window.innerWidth
-    canvas.height = window.innerHeight 
+	let size = window.innerHeight > window.innerWidth ? window.innerWidth : window.innerHeight ;
+	
+    canvas.width = size
+    canvas.height = size
     let gl = canvas.getContext( 'webgl' ) 
     let stateSize = Math.pow( 2, Math.floor(Math.log(canvas.width)/Math.log(2)) )
     
@@ -277,7 +278,7 @@ myGui = new MyGUI();
 gl.uniform1f( UdA, myGui.diffusionRateA )  
 gl.uniform1f( UdB, myGui.diffusionRateB )  
 gl.uniform1i(Udiffusion, myGui.diffusionBchangeAcrossTheGrid )    	  
-      for( let i = 0; i < 12; i++ ) pingpong()
+      for( let i = 0; i < myGui.reactionSpeed; i++ ) pingpong()
  
       // use the default framebuffer object by passing null 
       gl.bindFramebuffer( gl.FRAMEBUFFER, null ) 
