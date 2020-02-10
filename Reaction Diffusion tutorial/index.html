@@ -52,7 +52,7 @@
   
   vec2 run() { 
   vec2 uv = vec2(gl_FragCoord.xy) / scale;
-	float dis = length(uv - vec2(0.5));
+	float dis = length(uv - vec2(0.5)) + 0.15;
     vec2 state = get( 0, 0 ); 
     float a = state.r; 
     float b = state.g; 
