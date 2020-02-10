@@ -14,7 +14,7 @@ This is Kai's github page for cs-imgd-420x class! welcome!
 - **ReadMe.md** (some instructions aobut how to interact with the demo )
 - **pictures** (pictures for  Vidiot analog synthesis tutorial assignment)
 
-### Mini - Assignment:
+### Mini - Assignment:(Feedback effect)
 - **index.html** (html file for Mini - assignment )
 - **website URL.md** (URL of the live running website for Mini - assignment : https://aceyan.github.io/kai-cs-imgd-420x/Mini%20-%20Assignment/index.html)
 - **dat.gui.js** ( js file from dat.js )
