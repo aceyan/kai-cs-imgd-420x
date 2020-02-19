@@ -1,37 +1,28 @@
     const glslify = require( 'glslify' )
     var myGui
-  let UfeedRate, UkillRate, UdA, UdB, Udiffusion
-
+   let time = 0
+  let lastTime = 0;
+  let acumulateTime = 0;
 window.onload = function() { 
 var MyGUI = function() {
   this.name = 'Reaction Diffusion tutorial';
-  this.killRate = .059;
-  this.feedRate = .04;
-  this.diffusionRateA = 0.53;
-  this.diffusionRateB = 0.82;
-  this.diffusionBchangeAcrossTheGrid = true;
-  this.reactionSpeed = 10;
+  this.reactionSpeed = 1;
+    this.frameRate = 1;
    this.reset = function() { reset() };
 };
 myGui = new MyGUI();
   var gui = new dat.GUI();
   gui.add(myGui, 'name');
-  gui.add(myGui, 'killRate', 0, 0.1);
-  gui.add(myGui, 'feedRate', 0, 0.1);
-  gui.add(myGui, 'diffusionRateA', 0,1);
-  gui.add(myGui, 'diffusionRateB', 0, 1);
-  gui.add(myGui, 'diffusionBchangeAcrossTheGrid');
  gui.add(myGui, 'reactionSpeed', 1, 20);
+   gui.add(myGui, 'frameRate', 0, 60);
   gui.add(myGui, 'reset');
 
     let canvas = document.querySelector( 'canvas' ) 
-  let size = window.innerHeight > window.innerWidth ? window.innerWidth : window.innerHeight ;
-  
+    let gl = canvas.getContext( 'webgl' ) 
+    size = 1024
     canvas.width = size
     canvas.height = size
-    let gl = canvas.getContext( 'webgl' ) 
-    let stateSize = Math.pow( 2, Math.floor(Math.log(canvas.width)/Math.log(2)) )
-    
+    let stateSize = size
     let verts = [ 
       1, 1, 
       -1, 1, 
@@ -65,11 +56,7 @@ myGui = new MyGUI();
     gl.linkProgram( programRender )
     gl.useProgram( programRender )
     
-  UfeedRate = gl.getUniformLocation( programRender, 'f' ) 
-  UkillRate = gl.getUniformLocation( programRender, 'k' ) 
-  UdA = gl.getUniformLocation( programRender, 'dA' ) 
-  UdB = gl.getUniformLocation( programRender, 'dB' ) 
-  Udiffusion = gl.getUniformLocation( programRender, 'diffusionBchangeAcrossTheGrid' ) 
+ 
     // create pointer to vertex array and uniform sharing simulation size 
     const position = gl.getAttribLocation( programRender, 'a_position' )
     gl.enableVertexAttribArray( position ) 
@@ -92,7 +79,7 @@ myGui = new MyGUI();
     gl.useProgram( programDraw )
 
     scale = gl.getUniformLocation( programDraw, 'scale' ) 
-    gl.uniform2f( scale, canvas.width,canvas.height ) 
+    gl.uniform2f( scale, stateSize,stateSize ) 
     const position2 = gl.getAttribLocation( programDraw, 'a_position' ) 
     gl.enableVertexAttribArray( position2 )
     gl.vertexAttribPointer( position2, 2, gl.FLOAT, false, 0,0 )
@@ -117,22 +104,26 @@ myGui = new MyGUI();
     gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA, stateSize, stateSize, 0, gl.RGBA, gl.FLOAT, null )
 
     const pixelSize = 4 
-    const feedSize = 48
     const initState = new Float32Array( stateSize * stateSize * pixelSize ) 
     const reset = function() { 
-      for( let i = 0; i < stateSize; i++ ) { 
-          for( let j = 0; j < stateSize * pixelSize; j+= pixelSize ) { 
-          // this will be our 'a' value in the simulation 
-          initState[ i * stateSize * pixelSize + j ] = 1 
-          // selectively add 'b' value to middle of screen 
-          if( i > stateSize / 2 - stateSize / feedSize  && i < stateSize / 2 + stateSize / feedSize ) { 
-            const xmin = j > (stateSize*pixelSize) / 2 - stateSize / feedSize
-            const xmax = j < (stateSize*pixelSize) / 2 + (stateSize*pixelSize) / feedSize 
-            if( xmin && xmax ) { 
-              initState[ i * stateSize * pixelSize + j + 1 ] = 1 
-            } 
-          } 
-        } 
+      for( let i = 0; i < stateSize * stateSize; i++ ) 
+      { 
+          var ii = pixelSize * i;
+          var factor;
+          if(Math.random() < 0.25)
+          {
+           factor = 1;
+          }
+          else
+          {
+           factor = 0;
+          }
+            initState[ ii ] = 1 * factor;
+            initState[ ii + 1] = 1 * factor;
+            initState[ ii + 2] = 1 * factor;
+
+            initState[ ii + 3] = 1 
+
       } 
       
       gl.texSubImage2D( 
@@ -171,12 +162,20 @@ myGui = new MyGUI();
     }
   
   const draw = function() { 
-      gl.useProgram( programRender ) 
-    gl.uniform1f( UfeedRate, myGui.feedRate )     
-    gl.uniform1f( UkillRate, myGui.killRate )   
-gl.uniform1f( UdA, myGui.diffusionRateA )  
-gl.uniform1f( UdB, myGui.diffusionRateB )  
-gl.uniform1i(Udiffusion, myGui.diffusionBchangeAcrossTheGrid )        
+
+          window.requestAnimationFrame( draw ) 
+ var now = Date.now();
+    acumulateTime +=  now - lastTime;
+    lastTime = now;
+    
+    var frameTime = 1.0 / myGui.frameRate * 1000;
+    if(acumulateTime < frameTime)
+    {
+      return;
+    }
+    acumulateTime = 0;
+
+      gl.useProgram( programRender )   
       for( let i = 0; i < myGui.reactionSpeed; i++ ) pingpong()
  
       // use the default framebuffer object by passing null 
@@ -192,8 +191,9 @@ gl.uniform1i(Udiffusion, myGui.diffusionBchangeAcrossTheGrid )
       // put simulation on screen
       gl.drawArrays( gl.TRIANGLES, 0, 6 ) 
         
-      window.requestAnimationFrame( draw ) 
+
     }
      
     draw()
 }
+
