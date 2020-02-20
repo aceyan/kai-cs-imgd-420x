@@ -4,6 +4,15 @@
    let time = 0
   let lastTime = 0;
   let acumulateTime = 0;
+  let mouseX;
+  let mouseY;
+  let isMouseDown;
+
+
+  let UisMouseDown;
+  let UmousePos;
+
+
 window.onload = function() { 
 var MyGUI = function() {
   this.name = 'Reaction Diffusion tutorial';
@@ -45,7 +54,7 @@ myGui = new MyGUI();
     gl.compileShader( vertexShader )
     console.log( gl.getShaderInfoLog( vertexShader ) ) // create fragment shader to run our simulation
     
-    shaderSource = glslify(["precision mediump float;\n#define GLSLIFY 1\n\n  uniform sampler2D state; \n  uniform vec2 scale;\n  \nfloat ALPHA_M = 0.147;\nfloat ALPHA_N = 0.028;\nfloat B1 = 0.278;\nfloat B2 =  0.365;\nfloat D1 = 0.267;\nfloat D2 = 0.445;\n\nconst float Ra = 9.0;\nconst float Ri = 3.0;\nfloat b = 1.0;\nfloat PI = 3.1415926;\n\nfloat  sigma1(float alpha, float x, float a)\n{\n\treturn 1.0 / (1.0 + exp(-(x - a) * 4.0 / alpha));\n}\n\n//for n\nfloat sigma2(float x, float a, float b)\n{\n\treturn sigma1(ALPHA_N, x, a) * (1.0 - sigma1(ALPHA_N, x, b) );\n}\n\nfloat sigma_m(float x, float y, float m) \n{\n    float sigma = sigma1(ALPHA_M, m, 0.5);\n    return x * (1.0 - sigma) + y * sigma;\n }\n\nfloat s(float n, float m)\n{\n\treturn sigma2(n, sigma_m(B1, D1, m), sigma_m(B2, D2, m));\n}\n\nvoid main() \n{ \n\n  float m = 0.0;//inner\n  float n = 0.0;//outter\n  float innerArea = PI * Ri * Ri;\n  float outterArea = PI * (Ra*Ra - Ri*Ri);\n  for(float i = -Ra; i <= Ra; i++)\n  {\n  \tfor(float j = -Ra; j <= Ra; j++)\n  \t{\n  \t\tfloat l = sqrt(i * i + j * j);\n  \t\tvec2 uv = (vec2(gl_FragCoord.xy) + vec2(i,j)) / scale;\n  \t\tfloat vaule = texture2D( state, uv).r;\n  \t\t\n  \t\t//for m, inner \t\n  \t\tif(l < Ri - b / 2.0)\n  \t\t{\n  \t\t\tm += vaule;\n  \t\t}\n  \t\telse if(l > Ri + b / 2.0)\n  \t\t{\n  \t\t\t//do nothing\n  \t\t}\n  \t\telse\n  \t\t{\n  \t\t\tm += vaule * (Ri + b/2.0 - l) / b;\n  \t\t}\n  \t\t\n  \t\t//for n, outter\n  \t\tif(l < Ra - b / 2.0 )\n  \t\t{\n  \t\t\tif(l > Ri + b / 2.0)\n  \t\t\t{\n  \t\t\t\tn += vaule;\n  \t\t\t}\n  \t\t\telse if(l < Ri - b / 2.0 )\n  \t\t\t{\n  \t\t\t\t//do nothing\n  \t\t\t}\n  \t\t\telse\n  \t\t\t{\n  \t\t\t\tn += vaule * (Ri + b/2.0 - l) / b;\n  \t\t\t}\n  \t\t}\n  \t\telse if(l > Ra + b / 2.0)\n  \t\t{\n  \t\t\t//do nothing\n  \t\t}\n  \t\telse\n  \t\t{\n  \t\t\tn += vaule * (Ra + b/2.0 - l) / b;\n  \t\t}\n  \t\t\n  \t\t\n  \t}\n  }\n\n  m /= innerArea;\n  n /= outterArea;\n\n  float result = s(n,m);\n    \n    gl_FragColor = vec4( vec3(result), 1. ); \n  //vec4 textureColor = texture2D( state,  gl_FragCoord.xy  / scale ); \n  //gl_FragColor = vec4( textureColor.rgb, 1. ); \n} "]) 
+    shaderSource = glslify(["precision mediump float;\n#define GLSLIFY 1\n\n  uniform sampler2D state; \n  uniform vec2 scale;\n  uniform bool isMouseDown;\n  uniform vec2 mousePos;\n\nfloat ALPHA_M = 0.147;\nfloat ALPHA_N = 0.028;\nfloat B1 = 0.278;\nfloat B2 =  0.365;\nfloat D1 = 0.267;\nfloat D2 = 0.445;\n\nfloat b = 1.0;\nfloat PI = 3.1415926;\n\nconst float Ra = 9.0;\nconst float Ri = 3.0;\n\nfloat  sigma1(float alpha, float x, float a)\n{\n\treturn 1.0 / (1.0 + exp(-(x - a) * 4.0 / alpha));\n}\n\n//for n\nfloat sigma2(float x, float a, float b)\n{\n\treturn sigma1(ALPHA_N, x, a) * (1.0 - sigma1(ALPHA_N, x, b) );\n}\n\nfloat sigma_m(float x, float y, float m) \n{\n    float sigma = sigma1(ALPHA_M, m, 0.5);\n    return x * (1.0 - sigma) + y * sigma;\n }\n\nfloat s(float n, float m)\n{\n\treturn sigma2(n, sigma_m(B1, D1, m), sigma_m(B2, D2, m));\n}\n\n//from book of shader\nvec3 hsb2rgb( in vec3 c )\n{\n    vec3 rgb = clamp(abs(mod(c.x*6.0+vec3(0.0,4.0,2.0),\n                             6.0)-3.0)-1.0,\n                     0.0,\n                     1.0 );\n    rgb = rgb*rgb*(3.0-2.0*rgb);\n    return c.z * mix( vec3(1.0), rgb, c.y);\n}\n\nvoid main() \n{ \n\n  float m = 0.0;//inner\n  float n = 0.0;//outter\n  float innerArea = PI * Ri * Ri;\n  float outterArea = PI * (Ra*Ra - Ri*Ri);\n  for(float i = -Ra; i <= Ra; i++)\n  {\n  \tfor(float j = -Ra; j <= Ra; j++)\n  \t{\n  \t\tfloat l = sqrt(i * i + j * j);\n  \t\tvec2 uv = (vec2(gl_FragCoord.xy) + vec2(i,j)) / scale;\n  \t\tfloat vaule = texture2D( state, uv).w;\n  \t\t\n  \t\t//for m, inner \t\n  \t\tif(l < Ri - b / 2.0)\n  \t\t{\n  \t\t\tm += vaule;\n  \t\t}\n  \t\telse if(l > Ri + b / 2.0)\n  \t\t{\n  \t\t\t//do nothing\n  \t\t}\n  \t\telse\n  \t\t{\n  \t\t\tm += vaule * (Ri + b/2.0 - l) / b;\n  \t\t}\n  \t\t\n  \t\t//for n, outter\n  \t\tif(l < Ra - b / 2.0 )\n  \t\t{\n  \t\t\tif(l > Ri + b / 2.0)\n  \t\t\t{\n  \t\t\t\tn += vaule;\n  \t\t\t}\n  \t\t\telse if(l < Ri - b / 2.0 )\n  \t\t\t{\n  \t\t\t\t//do nothing\n  \t\t\t}\n  \t\t\telse\n  \t\t\t{\n  \t\t\t\tn += vaule * (Ri + b/2.0 - l) / b;\n  \t\t\t}\n  \t\t}\n  \t\telse if(l > Ra + b / 2.0)\n  \t\t{\n  \t\t\t//do nothing\n  \t\t}\n  \t\telse\n  \t\t{\n  \t\t\tn += vaule * (Ra + b/2.0 - l) / b;\n  \t\t}\n  \t\t\n  \t\t\n  \t}\n  }\n\n  m /= innerArea;\n  n /= outterArea;\n\n  float result = s(n,m);\n    \n\tif(isMouseDown)\n\t{\n\t\n\t\tvec2 toMousePos = vec2( gl_FragCoord.xy  / scale) - mousePos;\n\t\tfloat dist = length(toMousePos);\n\n \t\tvec3 color = vec3(0.0);\n\n    \n\t    float angle = atan(toMousePos.y,toMousePos.x);\n\t    float radius = length(toMousePos)*2.0;\n\t\tcolor = hsb2rgb(vec3((angle/2.0*PI)+0.5,radius,1.0));\n\t   \tif(dist <= Ra / scale.x) \n\t \t{\n\t        \tresult = step((Ri+1.5)/scale.x, dist) * (1.0 - step(Ra/scale.x, dist));\n\t\t}\n\t\t\n\t\tgl_FragColor = vec4( color*result , result); \n\t}\n\telse\n\t{\n\n\t\t\tgl_FragColor = vec4( sin(result * 12.0 * PI), sin(result * 22.0 * PI), sin(result * 32.0 * PI) , result); \n\t}\n\n}"]) 
     const fragmentShaderRender = gl.createShader( gl.FRAGMENT_SHADER ) 
     gl.shaderSource( fragmentShaderRender, shaderSource ) 
     gl.compileShader( fragmentShaderRender ) 
@@ -65,6 +74,9 @@ myGui = new MyGUI();
     let scale = gl.getUniformLocation( programRender, 'scale' ) 
     gl.uniform2f( scale, stateSize, stateSize )
       
+
+    UisMouseDown = gl.getUniformLocation( programRender, 'isMouseDown' ) 
+    UmousePos = gl.getUniformLocation( programRender, 'mousePos' ) 
     // create shader program to draw our simulation to the screen 
     shaderSource = glslify(["precision mediump float;\n#define GLSLIFY 1\n\n  uniform sampler2D state; \n  uniform vec2 scale; \n  \n  void main() { \n    vec4 color = texture2D(state, gl_FragCoord.xy / scale); \n    gl_FragColor = vec4( color.rgb, 1. ); \n  }"]) 
     fragmentShaderDraw = gl.createShader( gl.FRAGMENT_SHADER ) 
@@ -123,7 +135,7 @@ myGui = new MyGUI();
             initState[ ii + 1] = 1 * factor;
             initState[ ii + 2] = 1 * factor;
 
-            initState[ ii + 3] = 1 
+            initState[ ii + 3] = 1  * factor;
 
       } 
       
@@ -177,6 +189,11 @@ myGui = new MyGUI();
     acumulateTime = 0;
 
       gl.useProgram( programRender )   
+
+      gl.uniform2f( UmousePos, mouseX, mouseY ) 
+      gl.uniform1i( UisMouseDown, isMouseDown ) 
+
+
       for( let i = 0; i < myGui.reactionSpeed; i++ ) pingpong()
  
       // use the default framebuffer object by passing null 
@@ -196,6 +213,37 @@ myGui = new MyGUI();
     }
      
     draw()
+
+
+  const onMousedown = function(ev) 
+  { 
+    isMouseDown = true;
+  
+  }
+
+  const onMouseMove = function(ev) 
+  {
+  var x = ev.clientX; 
+  var y = ev.clientY; 
+  
+  //console.log("x:" + x);
+  //console.log("y:" + y);
+  mouseX = x / canvas.width;
+  mouseY = (canvas.height - y) / canvas.height;
+
+
+  //console.log("mouseX:" + mouseX);
+  //console.log("mouseY:" + mouseY);
+  }
+
+  const onMouseUp = function()
+  {
+    isMouseDown = false;
+  }
+
+  canvas.onmousedown  = onMousedown;
+  canvas.onmouseup  = onMouseUp;
+  canvas.onmousemove  = onMouseMove;
 }
 
 

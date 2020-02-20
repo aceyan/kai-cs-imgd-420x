@@ -1,7 +1,9 @@
 precision mediump float;
   uniform sampler2D state; 
   uniform vec2 scale;
-  
+  uniform bool isMouseDown;
+  uniform vec2 mousePos;
+
 float ALPHA_M = 0.147;
 float ALPHA_N = 0.028;
 float B1 = 0.278;
@@ -9,11 +11,11 @@ float B2 =  0.365;
 float D1 = 0.267;
 float D2 = 0.445;
 
-const float Ra = 9.0;
-const float Ri = 3.0;
 float b = 1.0;
 float PI = 3.1415926;
 
+const float Ra = 9.0;
+const float Ri = 3.0;
 
 float  sigma1(float alpha, float x, float a)
 {
@@ -37,6 +39,16 @@ float s(float n, float m)
 	return sigma2(n, sigma_m(B1, D1, m), sigma_m(B2, D2, m));
 }
 
+//from book of shader
+vec3 hsb2rgb( in vec3 c )
+{
+    vec3 rgb = clamp(abs(mod(c.x*6.0+vec3(0.0,4.0,2.0),
+                             6.0)-3.0)-1.0,
+                     0.0,
+                     1.0 );
+    rgb = rgb*rgb*(3.0-2.0*rgb);
+    return c.z * mix( vec3(1.0), rgb, c.y);
+}
 
 void main() 
 { 
@@ -51,7 +63,7 @@ void main()
   	{
   		float l = sqrt(i * i + j * j);
   		vec2 uv = (vec2(gl_FragCoord.xy) + vec2(i,j)) / scale;
-  		float vaule = texture2D( state, uv).r;
+  		float vaule = texture2D( state, uv).w;
   		
   		//for m, inner 	
   		if(l < Ri - b / 2.0)
@@ -102,7 +114,29 @@ void main()
 
   float result = s(n,m);
     
-    gl_FragColor = vec4( vec3(result), 1. ); 
-  //vec4 textureColor = texture2D( state,  gl_FragCoord.xy  / scale ); 
-  //gl_FragColor = vec4( textureColor.rgb, 1. ); 
-} 
+	if(isMouseDown)
+	{
+	
+		vec2 toMousePos = vec2( gl_FragCoord.xy  / scale) - mousePos;
+		float dist = length(toMousePos);
+
+ 		vec3 color = vec3(0.0);
+
+    
+	    float angle = atan(toMousePos.y,toMousePos.x);
+	    float radius = length(toMousePos)*2.0;
+		color = hsb2rgb(vec3((angle/2.0*PI)+0.5,radius,1.0));
+	   	if(dist <= Ra / scale.x) 
+	 	{
+	        	result = step((Ri+1.5)/scale.x, dist) * (1.0 - step(Ra/scale.x, dist));
+		}
+		
+		gl_FragColor = vec4( color*result , result); 
+	}
+	else
+	{
+
+			gl_FragColor = vec4( sin(result * 12.0 * PI), sin(result * 22.0 * PI), sin(result * 32.0 * PI) , result); 
+	}
+
+}

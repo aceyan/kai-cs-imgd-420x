@@ -3,11 +3,20 @@
    let time = 0
   let lastTime = 0;
   let acumulateTime = 0;
+  let mouseX;
+  let mouseY;
+  let isMouseDown;
+
+
+  let UisMouseDown;
+  let UmousePos;
+
+
 window.onload = function() { 
 var MyGUI = function() {
   this.name = 'Reaction Diffusion tutorial';
   this.reactionSpeed = 1;
-    this.frameRate = 1;
+    this.frameRate = 24;
    this.reset = function() { reset() };
 };
 myGui = new MyGUI();
@@ -64,6 +73,9 @@ myGui = new MyGUI();
     let scale = gl.getUniformLocation( programRender, 'scale' ) 
     gl.uniform2f( scale, stateSize, stateSize )
       
+
+    UisMouseDown = gl.getUniformLocation( programRender, 'isMouseDown' ) 
+    UmousePos = gl.getUniformLocation( programRender, 'mousePos' ) 
     // create shader program to draw our simulation to the screen 
     shaderSource = glslify.file( './fshader_draw.glsl' ) 
     fragmentShaderDraw = gl.createShader( gl.FRAGMENT_SHADER ) 
@@ -122,7 +134,7 @@ myGui = new MyGUI();
             initState[ ii + 1] = 1 * factor;
             initState[ ii + 2] = 1 * factor;
 
-            initState[ ii + 3] = 1 
+            initState[ ii + 3] = 1  * factor;
 
       } 
       
@@ -176,6 +188,11 @@ myGui = new MyGUI();
     acumulateTime = 0;
 
       gl.useProgram( programRender )   
+
+      gl.uniform2f( UmousePos, mouseX, mouseY ) 
+      gl.uniform1i( UisMouseDown, isMouseDown ) 
+
+
       for( let i = 0; i < myGui.reactionSpeed; i++ ) pingpong()
  
       // use the default framebuffer object by passing null 
@@ -195,5 +212,36 @@ myGui = new MyGUI();
     }
      
     draw()
+
+
+  const onMousedown = function(ev) 
+  { 
+    isMouseDown = true;
+  
+  }
+
+  const onMouseMove = function(ev) 
+  {
+  var x = ev.clientX; 
+  var y = ev.clientY; 
+  
+  //console.log("x:" + x);
+  //console.log("y:" + y);
+  mouseX = x / canvas.width;
+  mouseY = (canvas.height - y) / canvas.height;
+
+
+  //console.log("mouseX:" + mouseX);
+  //console.log("mouseY:" + mouseY);
+  }
+
+  const onMouseUp = function()
+  {
+    isMouseDown = false;
+  }
+
+  canvas.onmousedown  = onMousedown;
+  canvas.onmouseup  = onMouseUp;
+  canvas.onmousemove  = onMouseMove;
 }
 
