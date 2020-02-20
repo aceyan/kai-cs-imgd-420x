@@ -37,5 +37,7 @@ This is Kai's github page for cs-imgd-420x class! welcome!
 - **main.js** (js module for assignment 4 )
 - **fshader_draw.glsl**, **fshader_render.glsl**, **vshader.glsl** (shaders for assignment 4 )
 - **video URL** (URL of the video for assignment 4 : https://www.youtube.com/watch?v=LGt540ja7_Q&feature=youtu.be)
-- **website URL.md** (URL of the live running website for assignment 4: https://aceyan.github.io/kai-cs-imgd-420x/Assignment%204%20-%20Simulation%20programming/main.html)
+- **website URL** (URL of the live running website for assignment 4: https://aceyan.github.io/kai-cs-imgd-420x/Assignment%204%20-%20Simulation%20programming/main.html)
 - **ReadMe.md** (description, feedback and process of implementation document for assignment 4, readme! )
+- **dat.gui.js** ( js file from dat.js )
+- **bundle.js** ( all things are packed into it )
