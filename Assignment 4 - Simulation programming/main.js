@@ -6,25 +6,42 @@
   let mouseX;
   let mouseY;
   let isMouseDown;
-
+  let timeCounter = 0;
 
   let UisMouseDown;
   let UmousePos;
-
+  let uTime;
+  let UALPHA_M, UALPHA_N, UB1, UB2, UD1, UD2;
 
 window.onload = function() { 
 var MyGUI = function() {
-  this.name = 'Reaction Diffusion tutorial';
+  this.name = "Kai's assignment4 - Simulation programming";
+  this.ALPHA_M = 0.147;
+  this.ALPHA_N =  0.028;
+ this.B1 =  0.278;
+  this.B2 =  0.365;
+this.D1 = 0.267;
+this.D2 = 0.445;
   this.reactionSpeed = 1;
     this.frameRate = 24;
-   this.reset = function() { reset() };
+   this.reset = function() { reset(0.25) };
+   this.clearScreen = function() { reset(1) };
 };
 myGui = new MyGUI();
   var gui = new dat.GUI();
   gui.add(myGui, 'name');
+
+ gui.add(myGui, 'ALPHA_M', 0, 0.5);
+   gui.add(myGui, 'ALPHA_N', 0, 0.5);
+ gui.add(myGui, 'B1', 0, 0.5);
+  gui.add(myGui, 'B2', 0, 0.5);
+   gui.add(myGui, 'D1',  0, 0.5);
+   gui.add(myGui, 'D2',  0, 0.5);
+//
  gui.add(myGui, 'reactionSpeed', 1, 20);
    gui.add(myGui, 'frameRate', 0, 60);
   gui.add(myGui, 'reset');
+   gui.add(myGui, 'clearScreen');
 
     let canvas = document.querySelector( 'canvas' ) 
     let gl = canvas.getContext( 'webgl' ) 
@@ -76,6 +93,14 @@ myGui = new MyGUI();
 
     UisMouseDown = gl.getUniformLocation( programRender, 'isMouseDown' ) 
     UmousePos = gl.getUniformLocation( programRender, 'mousePos' ) 
+    uTime = gl.getUniformLocation( programRender, 'time' ) 
+    UALPHA_M  = gl.getUniformLocation( programRender, 'ALPHA_M' ) 
+    UALPHA_N  = gl.getUniformLocation( programRender, 'ALPHA_N' ) 
+    UB1  = gl.getUniformLocation( programRender, 'B1' ) 
+    UB2  = gl.getUniformLocation( programRender, 'B2' ) 
+    UD1  = gl.getUniformLocation( programRender, 'D1' ) 
+    UD2  = gl.getUniformLocation( programRender, 'D2' ) 
+
     // create shader program to draw our simulation to the screen 
     shaderSource = glslify.file( './fshader_draw.glsl' ) 
     fragmentShaderDraw = gl.createShader( gl.FRAGMENT_SHADER ) 
@@ -117,12 +142,14 @@ myGui = new MyGUI();
 
     const pixelSize = 4 
     const initState = new Float32Array( stateSize * stateSize * pixelSize ) 
-    const reset = function() { 
+    const reset = function(pct) { 
+
+  
       for( let i = 0; i < stateSize * stateSize; i++ ) 
       { 
           var ii = pixelSize * i;
           var factor;
-          if(Math.random() < 0.25)
+          if(Math.random() < pct)
           {
            factor = 1;
           }
@@ -141,10 +168,10 @@ myGui = new MyGUI();
       gl.texSubImage2D( 
         gl.TEXTURE_2D, 0, 0, 0, stateSize, stateSize, gl.RGBA, gl.FLOAT, initState, 0 
       ) 
+      
     }
-    
-    reset()
-  
+    reset(0.25)
+
   const fb = gl.createFramebuffer() 
     const fb2 = gl.createFramebuffer() 
   
@@ -187,12 +214,19 @@ myGui = new MyGUI();
     }
     acumulateTime = 0;
 
+      timeCounter++;
       gl.useProgram( programRender )   
-
       gl.uniform2f( UmousePos, mouseX, mouseY ) 
       gl.uniform1i( UisMouseDown, isMouseDown ) 
-
-
+      gl.uniform1f( uTime, timeCounter)
+      //
+      gl.uniform1f( UALPHA_M, myGui.ALPHA_M)
+     gl.uniform1f( UALPHA_N, myGui.ALPHA_N)
+     gl.uniform1f( UB1, myGui.B1)
+      gl.uniform1f( UB2, myGui.B2)
+      gl.uniform1f( UD1, myGui.D1)
+        gl.uniform1f( UD2, myGui.D2)
+      //
       for( let i = 0; i < myGui.reactionSpeed; i++ ) pingpong()
  
       // use the default framebuffer object by passing null 

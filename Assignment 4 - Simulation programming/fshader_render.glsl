@@ -3,13 +3,22 @@ precision mediump float;
   uniform vec2 scale;
   uniform bool isMouseDown;
   uniform vec2 mousePos;
+  uniform float time;
+  //
+  uniform float ALPHA_M;
+uniform float ALPHA_N;
+uniform float B1;
+uniform float B2;
+uniform float D1;
+uniform float D2;
 
-float ALPHA_M = 0.147;
-float ALPHA_N = 0.028;
-float B1 = 0.278;
-float B2 =  0.365;
-float D1 = 0.267;
-float D2 = 0.445;
+//float ALPHA_M = 0.147;
+//float ALPHA_N = 0.028;
+//float B1 = 0.278;
+//float B2 =  0.365;
+//float D1 = 0.267;
+//float D2 = 0.445;
+
 
 float b = 1.0;
 float PI = 3.1415926;
@@ -123,7 +132,7 @@ void main()
  		vec3 color = vec3(0.0);
 
     
-	    float angle = atan(toMousePos.y,toMousePos.x);
+	    float angle = atan(toMousePos.y,toMousePos.x) + time  * PI;
 	    float radius = length(toMousePos)*2.0;
 		color = hsb2rgb(vec3((angle/2.0*PI)+0.5,radius,1.0));
 	   	if(dist <= Ra / scale.x) 

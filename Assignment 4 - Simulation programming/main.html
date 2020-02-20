@@ -2,9 +2,31 @@
 <html lang='en'>
   <head>
   <meta charset="uft-8">
+  <style>
+  	 body {
+        margin: 0;
+        background: black;
+      }
+
+      .info {
+        position: absolute;
+        top: 0px;
+        margin-left: 10px;
+        color: white;
+        font-family: sans-serif;
+        width: 1024px;
+        z-index: 1;
+      }
+  	    </style>
   </head>
   <body>
   <canvas></canvas>
+  <div class="info">
+      <h4>Instruction1 : Press left button of mouse and drag to interact with gliders</h4>
+      <h4>Instruction2 : Press the clearScreen Btn on the GUI, then press left button of mouse and drag to draw new cells</h4>
+    
+    </div>
+
   </body>
 <script src='./bundle.js' type='text/javascript'></script>
 <script type="text/javascript" src="dat.gui.js"></script>
