@@ -14,26 +14,33 @@
   let uTime;
   let UposTexturePingPong, UvelTexturePingPong;
   let UposTextureDrawPoints;
+  let UmaxForce, UmaxSpeed;
+  let UalignmentScale, UcohesionScale, UseparationScale;
 
-  const numPoints = 50;// number of points = numPoints * numPoints
+
+  const numPoints = 100;// number of points = numPoints * numPoints
 
 window.onload = function() { 
 var MyGUI = function() {
-  this.name = "Kai's Final Project";
+  this.name = "Kai's Final Project - GPGPU Flocking";
+  this.maxForce = 0.001;
+ this.maxSpeed = 0.008;
+this.alignmentScale = 1;
+this.cohesionScale = 1;
+this.separationScale = 1;
+  this.frameRate = 34;
 
-  this.reactionSpeed = 1;
-    this.frameRate = 34;
-   this.reset = function() { reset(0.25) };
-   this.clearScreen = function() { reset(1) };
 };
 myGui = new MyGUI();
   var gui = new dat.GUI();
   gui.add(myGui, 'name');
-//
- gui.add(myGui, 'reactionSpeed', 1, 20);
+gui.add(myGui, 'maxForce', 0, 0.002);
+gui.add(myGui, 'maxSpeed', 0, 0.1);
+gui.add(myGui, 'alignmentScale', 0, 5);
+gui.add(myGui, 'cohesionScale', 0, 5);
+gui.add(myGui, 'separationScale', 0, 5);
    gui.add(myGui, 'frameRate', 0, 60);
-  gui.add(myGui, 'reset');
-   gui.add(myGui, 'clearScreen');
+
 
   let canvas = document.getElementById( 'gl' )
      let gl = canvas.getContext( 'webgl2' )
@@ -67,7 +74,7 @@ myGui = new MyGUI();
     gl.compileShader( vertexShader )
     console.log( gl.getShaderInfoLog( vertexShader ) ) // create fragment shader to run our simulation
     
-    shaderSource = glslify(["#version 300 es\nprecision highp float;\n#define GLSLIFY 1\n\n  uniform sampler2D posTexture; \n  uniform sampler2D velTexture; //xy is postion, zw is acceleration\n  uniform vec2 scale;\n  uniform bool isMouseDown;\n  uniform vec2 mousePos;\n  uniform float time;\n const float maxForce = 0.0005;\n const float maxSpeed = 0.01;\n\nlayout(location = 0) out vec4 o_newPos;\nlayout(location = 1) out vec4 o_newVel;\n\nvec2 align(vec4 currentPos, vec4 currentVel)\n{\n    float d = 0.2;\n    vec2 totalVelocity = vec2(0);\n    vec2 acc = vec2(0);\n    float num = 0.0;\n    for (float y = 0.0; y < scale.y; y++)\n    {\n      for (float x = 0.0; x < scale.x; x++) \n      { \n        vec2 neighborUV = vec2(x+0.5, y+0.5)/scale.xy;\n        vec4 neighborPos = texture( posTexture, neighborUV);\n        float distance = length(currentPos.xy - neighborPos.xy);\n        if(currentPos.xy!= neighborPos.xy && distance <= d)\n        {\n          totalVelocity += texture( velTexture, neighborUV).xy;\n          num++;\n        }\n      }\n    }\n    if(num > 0.0)\n    {\n      totalVelocity /= num;\n      totalVelocity = normalize(totalVelocity) * maxSpeed;\n      acc = totalVelocity - currentVel.xy;\n      if(length(acc) > maxForce)\n      {\n        acc = normalize(acc) * maxForce;\n      }\n    }\n    return acc;\n}\n\nvec2 cohesion(vec4 currentPos, vec4 currentVel)\n{\n     float d = 0.2;\n    vec2 totalVelocity = vec2(0);\n    vec2 acc = vec2(0);\n    float num = 0.0;\n    for (float y = 0.0; y < scale.y; y++)\n    {\n      for (float x = 0.0; x < scale.x; x++) \n      { \n        vec2 neighborUV = vec2(x+0.5, y+0.5)/scale.xy;\n        vec4 neighborPos = texture( posTexture, neighborUV);\n        float distance = length(currentPos.xy - neighborPos.xy);\n        if(currentPos.xy!= neighborPos.xy && distance <= d)\n        {\n          totalVelocity += neighborPos.xy;\n          num++;\n        }\n      }\n    }\n    if(num > 0.0)\n    {\n      totalVelocity /= num;\n      totalVelocity = totalVelocity - currentPos.xy;\n      totalVelocity = normalize(totalVelocity) * maxSpeed;\n      acc = totalVelocity - currentVel.xy;\n      if(length(acc) > maxForce)\n      {\n        acc = normalize(acc) * maxForce;\n      }\n    }\n    return acc;\n}\n\nvec2 separation(vec4 currentPos, vec4 currentVel)\n{\n     float d = 0.2;\n    vec2 totalVelocity = vec2(0);\n    vec2 acc = vec2(0);\n    float num = 0.0;\n    for (float y = 0.0; y < scale.y; y++)\n    {\n      for (float x = 0.0; x < scale.x; x++) \n      { \n        vec2 neighborUV = vec2(x+0.5, y+0.5)/scale.xy;\n        vec4 neighborPos = texture( posTexture, neighborUV);\n        float distance = length(currentPos.xy - neighborPos.xy);\n        if(currentPos.xy!= neighborPos.xy && distance <= d)\n        {\n          vec2 diff = currentPos.xy - neighborPos.xy;\n          diff /= distance;\n          totalVelocity += diff;\n          num++;\n        }\n      }\n    }\n    if(num > 0.0)\n    {\n      totalVelocity /= num;\n      totalVelocity = normalize(totalVelocity) * maxSpeed;\n      acc = totalVelocity - currentVel.xy;\n      if(length(acc) > maxForce)\n      {\n        acc = normalize(acc) * maxForce;\n      }\n    }\n    return acc;\n}\n\nvoid main() \n{ \n      vec2 uv = vec2(gl_FragCoord.xy)/ scale;\n      vec4 currentPos = texture( posTexture, uv);\n      vec4 currentVel = texture( velTexture, uv);\n\n      vec2 acc;\n      acc += align(currentPos, currentVel);\n      acc += cohesion(currentPos, currentVel);\n      acc += separation(currentPos, currentVel);\n    \n    currentPos.xy += currentVel.xy;\n\n    if(currentPos.x >= 1.0)\n    {\n      currentPos.x = -1.0;\n    }\n    else if(currentPos.x <= -1.0)\n    {\n      currentPos.x = 1.0;\n    }\n\n    if(currentPos.y >= 1.0)\n    {\n      currentPos.y = -1.0;\n    }\n    else if(currentPos.y <= -1.0)\n    {\n      currentPos.y = 1.0;\n    }\n\n    currentVel.xy += acc;\n\n    o_newPos = currentPos;\n    o_newVel = currentVel;\n    \n\t\t\t\n\t}"]) 
+    shaderSource = glslify(["#version 300 es\nprecision highp float;\n#define GLSLIFY 1\n\n  uniform sampler2D posTexture; \n  uniform sampler2D velTexture; //xy is postion, zw is acceleration\n  uniform vec2 scale;\n  uniform bool isMouseDown;\n  uniform vec2 mousePos;\n  uniform float time;\n  //UI\n uniform float maxForce;\n uniform float maxSpeed;\n uniform float alignmentScale;\n uniform float cohesionScale;\n uniform float separationScale;\n\nlayout(location = 0) out vec4 o_newPos;\nlayout(location = 1) out vec4 o_newVel;\n\nvec2 align(vec4 currentPos, vec4 currentVel)\n{\n    float d = 0.2;\n    vec2 totalVelocity = vec2(0);\n    vec2 acc = vec2(0);\n    float num = 0.0;\n    for (float y = 0.0; y < scale.y; y++)\n    {\n      for (float x = 0.0; x < scale.x; x++) \n      { \n        vec2 neighborUV = vec2(x+0.5, y+0.5)/scale.xy;\n        vec4 neighborPos = texture( posTexture, neighborUV);\n        float distance = length(currentPos.xy - neighborPos.xy);\n        if(currentPos.xy!= neighborPos.xy && distance <= d)\n        {\n          totalVelocity += texture( velTexture, neighborUV).xy;\n          num++;\n        }\n      }\n    }\n    if(num > 0.0)\n    {\n      totalVelocity /= num;\n      totalVelocity = normalize(totalVelocity) * maxSpeed;\n      acc = totalVelocity - currentVel.xy;\n      if(length(acc) > maxForce)\n      {\n        acc = normalize(acc) * maxForce;\n      }\n    }\n    return acc;\n}\n\nvec2 cohesion(vec4 currentPos, vec4 currentVel)\n{\n     float d = 0.2;\n    vec2 totalVelocity = vec2(0);\n    vec2 acc = vec2(0);\n    float num = 0.0;\n    for (float y = 0.0; y < scale.y; y++)\n    {\n      for (float x = 0.0; x < scale.x; x++) \n      { \n        vec2 neighborUV = vec2(x+0.5, y+0.5)/scale.xy;\n        vec4 neighborPos = texture( posTexture, neighborUV);\n        float distance = length(currentPos.xy - neighborPos.xy);\n        if(currentPos.xy!= neighborPos.xy && distance <= d)\n        {\n          totalVelocity += neighborPos.xy;\n          num++;\n        }\n      }\n    }\n    if(num > 0.0)\n    {\n      totalVelocity /= num;\n      totalVelocity = totalVelocity - currentPos.xy;\n      totalVelocity = normalize(totalVelocity) * maxSpeed;\n      acc = totalVelocity - currentVel.xy;\n      if(length(acc) > maxForce)\n      {\n        acc = normalize(acc) * maxForce;\n      }\n    }\n    return acc;\n}\n\nvec2 separation(vec4 currentPos, vec4 currentVel)\n{\n     float d = 0.2;\n    vec2 totalVelocity = vec2(0);\n    vec2 acc = vec2(0);\n    float num = 0.0;\n    for (float y = 0.0; y < scale.y; y++)\n    {\n      for (float x = 0.0; x < scale.x; x++) \n      { \n        vec2 neighborUV = vec2(x+0.5, y+0.5)/scale.xy;\n        vec4 neighborPos = texture( posTexture, neighborUV);\n        float distance = length(currentPos.xy - neighborPos.xy);\n        if(currentPos.xy!= neighborPos.xy && distance <= d)\n        {\n          vec2 diff = currentPos.xy - neighborPos.xy;\n          diff /= distance;\n          totalVelocity += diff;\n          num++;\n        }\n      }\n    }\n    if(num > 0.0)\n    {\n      totalVelocity /= num;\n      totalVelocity = normalize(totalVelocity) * maxSpeed;\n      acc = totalVelocity - currentVel.xy;\n      if(length(acc) > maxForce)\n      {\n        acc = normalize(acc) * maxForce;\n      }\n    }\n    return acc;\n}\n\nvoid main() \n{ \n      vec2 uv = vec2(gl_FragCoord.xy)/ scale;\n      vec4 currentPos = texture( posTexture, uv);\n      vec4 currentVel = texture( velTexture, uv);\n\n      vec2 acc;\n      acc += align(currentPos, currentVel) * alignmentScale;\n      acc += cohesion(currentPos, currentVel) * cohesionScale;\n      acc += separation(currentPos, currentVel) * separationScale;\n    \n    currentPos.xy += currentVel.xy;\n\n    if(currentPos.x >= 1.0)\n    {\n      currentPos.x = -1.0;\n    }\n    else if(currentPos.x <= -1.0)\n    {\n      currentPos.x = 1.0;\n    }\n\n    if(currentPos.y >= 1.0)\n    {\n      currentPos.y = -1.0;\n    }\n    else if(currentPos.y <= -1.0)\n    {\n      currentPos.y = 1.0;\n    }\n\n    currentVel.xy += acc;\n\n    o_newPos = currentPos;\n    o_newVel = currentVel;\n    \n\t\t\t\n\t}"]) 
     const fragmentShaderRender = gl.createShader( gl.FRAGMENT_SHADER ) 
     gl.shaderSource( fragmentShaderRender, shaderSource ) 
     gl.compileShader( fragmentShaderRender ) 
@@ -89,6 +96,11 @@ myGui = new MyGUI();
     uTime = gl.getUniformLocation( programRender, 'time' ) 
 UposTexturePingPong = gl.getUniformLocation( programRender, 'posTexture' ) 
 UvelTexturePingPong = gl.getUniformLocation( programRender, 'velTexture' ) 
+UmaxForce = gl.getUniformLocation( programRender, 'maxForce' ) 
+UmaxSpeed = gl.getUniformLocation( programRender, 'maxSpeed' ) 
+UalignmentScale = gl.getUniformLocation( programRender, 'alignmentScale' ) 
+UcohesionScale = gl.getUniformLocation( programRender, 'cohesionScale' ) 
+UseparationScale = gl.getUniformLocation( programRender, 'separationScale' ) 
 
     let verts2 = new Float32Array(numPoints * numPoints);
     for (var i = 0; i < numPoints * numPoints; i++)
@@ -103,7 +115,7 @@ UvelTexturePingPong = gl.getUniformLocation( programRender, 'velTexture' )
     gl.enableVertexAttribArray( 0 )
 
 
-  shaderSource = glslify(["#version 300 es\n  precision highp float;\n#define GLSLIFY 1\n \n  layout(location = 0) in float a_index; \n  uniform vec2 scale;\n  uniform sampler2D posTexture; \n  void main() { \n  \tvec2 uv;\n  \tuv.x = ( float(int(a_index) % int(scale.x)) + 0.5 ) / scale.x;\n  \tuv.y = ( a_index / scale.x + 0.5 ) / scale.y;\n  \tvec4 currentPos = texture( posTexture, uv); \n  \tgl_PointSize = 5.;\n    gl_Position = vec4(currentPos.xy, 0, 1.0);\n\n    //gl_Position = vec4(a_index * 0.1 ,0, 0, 1.0);\n  } "]) 
+  shaderSource = glslify(["#version 300 es\n  precision highp float;\n#define GLSLIFY 1\n \n  layout(location = 0) in float a_index; \n  uniform vec2 scale;\n  uniform sampler2D posTexture; \n  void main() { \n  \tvec2 uv;\n  \tuv.x = ( float(int(a_index) % int(scale.x)) + 0.5 ) / scale.x;\n  \tuv.y = ( a_index / scale.x + 0.5 ) / scale.y;\n  \tvec4 currentPos = texture( posTexture, uv); \n  \tgl_PointSize = 2.5;\n    gl_Position = vec4(currentPos.xy, 0, 1.0);\n\n    //gl_Position = vec4(a_index * 0.1 ,0, 0, 1.0);\n  } "]) 
    vertexShaderPoint = gl.createShader( gl.VERTEX_SHADER ) 
     gl.shaderSource( vertexShaderPoint, shaderSource ) 
     gl.compileShader( vertexShaderPoint )
@@ -172,7 +184,7 @@ var pixelSize = 4
       ) 
       
     }
-        reset(1);
+    reset(1);
 
      let texVelBack = gl.createTexture()  //xy for velocity, zw channel for acceleration
     gl.bindTexture( gl.TEXTURE_2D, texVelBack ) 
@@ -182,7 +194,7 @@ var pixelSize = 4
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST ) 
     gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA32F, numPoints, numPoints, 0, gl.RGBA, gl.FLOAT, null )
 
-reset(0.005)
+    reset(0.005)
       
 
   const fb = gl.createFramebuffer() 
@@ -250,6 +262,15 @@ reset(0.005)
       gl.uniform2f( UmousePos, mouseX, mouseY ) 
       gl.uniform1i( UisMouseDown, isMouseDown ) 
       gl.uniform1f( uTime, timeCounter)
+      //
+ gl.uniform1f( UmaxSpeed, myGui.maxSpeed)
+  gl.uniform1f( UmaxForce, myGui.maxForce)
+   gl.uniform1f( UalignmentScale, myGui.alignmentScale)
+    gl.uniform1f( UcohesionScale, myGui.cohesionScale)
+     gl.uniform1f( UseparationScale,  myGui.separationScale)
+
+
+
       //assign texture unit
       gl.uniform1i(UposTexturePingPong, 0); 
       gl.uniform1i(UvelTexturePingPong, 1); 
@@ -257,7 +278,7 @@ reset(0.005)
       let scale = gl.getUniformLocation( programRender, 'scale' ) 
       gl.uniform2f( scale, numPoints, numPoints )
 
-      for( let i = 0; i < myGui.reactionSpeed; i++ ) pingpong()
+      pingpong()
  
       // use the default framebuffer object by passing null 
       gl.bindFramebuffer( gl.FRAMEBUFFER, null ) 

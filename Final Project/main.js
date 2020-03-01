@@ -13,26 +13,33 @@
   let uTime;
   let UposTexturePingPong, UvelTexturePingPong;
   let UposTextureDrawPoints;
+  let UmaxForce, UmaxSpeed;
+  let UalignmentScale, UcohesionScale, UseparationScale;
 
-  const numPoints = 50;// number of points = numPoints * numPoints
+
+  const numPoints = 100;// number of points = numPoints * numPoints
 
 window.onload = function() { 
 var MyGUI = function() {
-  this.name = "Kai's Final Project";
+  this.name = "Kai's Final Project - GPGPU Flocking";
+  this.maxForce = 0.001;
+ this.maxSpeed = 0.008;
+this.alignmentScale = 1;
+this.cohesionScale = 1;
+this.separationScale = 1;
+  this.frameRate = 34;
 
-  this.reactionSpeed = 1;
-    this.frameRate = 34;
-   this.reset = function() { reset(0.25) };
-   this.clearScreen = function() { reset(1) };
 };
 myGui = new MyGUI();
   var gui = new dat.GUI();
   gui.add(myGui, 'name');
-//
- gui.add(myGui, 'reactionSpeed', 1, 20);
+gui.add(myGui, 'maxForce', 0, 0.002);
+gui.add(myGui, 'maxSpeed', 0, 0.1);
+gui.add(myGui, 'alignmentScale', 0, 5);
+gui.add(myGui, 'cohesionScale', 0, 5);
+gui.add(myGui, 'separationScale', 0, 5);
    gui.add(myGui, 'frameRate', 0, 60);
-  gui.add(myGui, 'reset');
-   gui.add(myGui, 'clearScreen');
+
 
   let canvas = document.getElementById( 'gl' )
      let gl = canvas.getContext( 'webgl2' )
@@ -88,6 +95,11 @@ myGui = new MyGUI();
     uTime = gl.getUniformLocation( programRender, 'time' ) 
 UposTexturePingPong = gl.getUniformLocation( programRender, 'posTexture' ) 
 UvelTexturePingPong = gl.getUniformLocation( programRender, 'velTexture' ) 
+UmaxForce = gl.getUniformLocation( programRender, 'maxForce' ) 
+UmaxSpeed = gl.getUniformLocation( programRender, 'maxSpeed' ) 
+UalignmentScale = gl.getUniformLocation( programRender, 'alignmentScale' ) 
+UcohesionScale = gl.getUniformLocation( programRender, 'cohesionScale' ) 
+UseparationScale = gl.getUniformLocation( programRender, 'separationScale' ) 
 
     let verts2 = new Float32Array(numPoints * numPoints);
     for (var i = 0; i < numPoints * numPoints; i++)
@@ -171,7 +183,7 @@ var pixelSize = 4
       ) 
       
     }
-        reset(1);
+    reset(1);
 
      let texVelBack = gl.createTexture()  //xy for velocity, zw channel for acceleration
     gl.bindTexture( gl.TEXTURE_2D, texVelBack ) 
@@ -181,7 +193,7 @@ var pixelSize = 4
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST ) 
     gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA32F, numPoints, numPoints, 0, gl.RGBA, gl.FLOAT, null )
 
-reset(0.005)
+    reset(0.005)
       
 
   const fb = gl.createFramebuffer() 
@@ -249,6 +261,15 @@ reset(0.005)
       gl.uniform2f( UmousePos, mouseX, mouseY ) 
       gl.uniform1i( UisMouseDown, isMouseDown ) 
       gl.uniform1f( uTime, timeCounter)
+      //
+ gl.uniform1f( UmaxSpeed, myGui.maxSpeed)
+  gl.uniform1f( UmaxForce, myGui.maxForce)
+   gl.uniform1f( UalignmentScale, myGui.alignmentScale)
+    gl.uniform1f( UcohesionScale, myGui.cohesionScale)
+     gl.uniform1f( UseparationScale,  myGui.separationScale)
+
+
+
       //assign texture unit
       gl.uniform1i(UposTexturePingPong, 0); 
       gl.uniform1i(UvelTexturePingPong, 1); 
@@ -256,7 +277,7 @@ reset(0.005)
       let scale = gl.getUniformLocation( programRender, 'scale' ) 
       gl.uniform2f( scale, numPoints, numPoints )
 
-      for( let i = 0; i < myGui.reactionSpeed; i++ ) pingpong()
+      pingpong()
  
       // use the default framebuffer object by passing null 
       gl.bindFramebuffer( gl.FRAMEBUFFER, null ) 

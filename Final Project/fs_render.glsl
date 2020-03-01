@@ -6,8 +6,12 @@ precision highp float;
   uniform bool isMouseDown;
   uniform vec2 mousePos;
   uniform float time;
- const float maxForce = 0.0005;
- const float maxSpeed = 0.01;
+  //UI
+ uniform float maxForce;
+ uniform float maxSpeed;
+ uniform float alignmentScale;
+ uniform float cohesionScale;
+ uniform float separationScale;
 
 layout(location = 0) out vec4 o_newPos;
 layout(location = 1) out vec4 o_newVel;
@@ -123,11 +127,12 @@ void main()
       vec4 currentVel = texture( velTexture, uv);
 
       vec2 acc;
-      acc += align(currentPos, currentVel);
-      acc += cohesion(currentPos, currentVel);
-      acc += separation(currentPos, currentVel);
+      acc += align(currentPos, currentVel) * alignmentScale;
+      acc += cohesion(currentPos, currentVel) * cohesionScale;
+      acc += separation(currentPos, currentVel) * separationScale;
     
     currentPos.xy += currentVel.xy;
+
 
 
     if(currentPos.x >= 1.0)
