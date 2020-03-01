@@ -12,6 +12,8 @@ precision highp float;
  uniform float alignmentScale;
  uniform float cohesionScale;
  uniform float separationScale;
+ uniform bool bmouseCentral;
+ uniform bool bmousePredator;
 
 layout(location = 0) out vec4 o_newPos;
 layout(location = 1) out vec4 o_newVel;
@@ -56,20 +58,30 @@ vec2 cohesion(vec4 currentPos, vec4 currentVel)
     vec2 totalVelocity = vec2(0);
     vec2 acc = vec2(0);
     float num = 0.0;
-    for (float y = 0.0; y < scale.y; y++)
-    {
-      for (float x = 0.0; x < scale.x; x++) 
-      { 
-        vec2 neighborUV = vec2(x+0.5, y+0.5)/scale.xy;
-        vec4 neighborPos = texture( posTexture, neighborUV);
-        float distance = length(currentPos.xy - neighborPos.xy);
-        if(currentPos.xy!= neighborPos.xy && distance <= d)
-        {
-          totalVelocity += neighborPos.xy;
-          num++;
-        }
+
+    if(bmouseCentral)
+      {
+         totalVelocity += mousePos;
+         num++; 
       }
-    }
+      else
+      {
+         for (float y = 0.0; y < scale.y; y++)
+          {
+            for (float x = 0.0; x < scale.x; x++) 
+            { 
+              vec2 neighborUV = vec2(x+0.5, y+0.5)/scale.xy;
+              vec4 neighborPos = texture( posTexture, neighborUV);
+              float distance = length(currentPos.xy - neighborPos.xy);
+              if(currentPos.xy!= neighborPos.xy && distance <= d)
+              {
+                totalVelocity += neighborPos.xy;
+                num++;
+              }
+            }
+          }
+      }
+   
     if(num > 0.0)
     {
       totalVelocity /= num;
@@ -87,7 +99,7 @@ vec2 cohesion(vec4 currentPos, vec4 currentVel)
 
 vec2 separation(vec4 currentPos, vec4 currentVel)
 {
-     float d = 0.2;
+    float d = 0.2;
     vec2 totalVelocity = vec2(0);
     vec2 acc = vec2(0);
     float num = 0.0;
@@ -107,6 +119,20 @@ vec2 separation(vec4 currentPos, vec4 currentVel)
         }
       }
     }
+
+    if(bmousePredator)
+      {
+        float distance = length(currentPos.xy - mousePos);
+        if(distance <= d)
+        {
+           vec2 diff = currentPos.xy - mousePos;
+            diff /= distance;
+            totalVelocity += diff * 100000.0;
+            num++;
+        }
+         
+      }
+
     if(num > 0.0)
     {
       totalVelocity /= num;

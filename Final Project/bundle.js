@@ -16,6 +16,7 @@
   let UposTextureDrawPoints;
   let UmaxForce, UmaxSpeed;
   let UalignmentScale, UcohesionScale, UseparationScale;
+  let UbmouseCentral, UbmousePredator;
 
 
   const numPoints = 100;// number of points = numPoints * numPoints
@@ -28,6 +29,8 @@ var MyGUI = function() {
 this.alignmentScale = 1;
 this.cohesionScale = 1;
 this.separationScale = 1;
+this.mouseCentral = false;
+this.mousePredator = false;
   this.frameRate = 34;
 
 };
@@ -39,14 +42,16 @@ gui.add(myGui, 'maxSpeed', 0, 0.1);
 gui.add(myGui, 'alignmentScale', 0, 5);
 gui.add(myGui, 'cohesionScale', 0, 5);
 gui.add(myGui, 'separationScale', 0, 5);
+gui.add(myGui, 'mouseCentral');
+gui.add(myGui, 'mousePredator');
    gui.add(myGui, 'frameRate', 0, 60);
 
 
   let canvas = document.getElementById( 'gl' )
      let gl = canvas.getContext( 'webgl2' )
 
-    canvas.width = 1024
-    canvas.height = 728
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
     let verts = [ 
       1, 1, 
       -1, 1, 
@@ -74,7 +79,7 @@ gui.add(myGui, 'separationScale', 0, 5);
     gl.compileShader( vertexShader )
     console.log( gl.getShaderInfoLog( vertexShader ) ) // create fragment shader to run our simulation
     
-    shaderSource = glslify(["#version 300 es\nprecision highp float;\n#define GLSLIFY 1\n\n  uniform sampler2D posTexture; \n  uniform sampler2D velTexture; //xy is postion, zw is acceleration\n  uniform vec2 scale;\n  uniform bool isMouseDown;\n  uniform vec2 mousePos;\n  uniform float time;\n  //UI\n uniform float maxForce;\n uniform float maxSpeed;\n uniform float alignmentScale;\n uniform float cohesionScale;\n uniform float separationScale;\n\nlayout(location = 0) out vec4 o_newPos;\nlayout(location = 1) out vec4 o_newVel;\n\nvec2 align(vec4 currentPos, vec4 currentVel)\n{\n    float d = 0.2;\n    vec2 totalVelocity = vec2(0);\n    vec2 acc = vec2(0);\n    float num = 0.0;\n    for (float y = 0.0; y < scale.y; y++)\n    {\n      for (float x = 0.0; x < scale.x; x++) \n      { \n        vec2 neighborUV = vec2(x+0.5, y+0.5)/scale.xy;\n        vec4 neighborPos = texture( posTexture, neighborUV);\n        float distance = length(currentPos.xy - neighborPos.xy);\n        if(currentPos.xy!= neighborPos.xy && distance <= d)\n        {\n          totalVelocity += texture( velTexture, neighborUV).xy;\n          num++;\n        }\n      }\n    }\n    if(num > 0.0)\n    {\n      totalVelocity /= num;\n      totalVelocity = normalize(totalVelocity) * maxSpeed;\n      acc = totalVelocity - currentVel.xy;\n      if(length(acc) > maxForce)\n      {\n        acc = normalize(acc) * maxForce;\n      }\n    }\n    return acc;\n}\n\nvec2 cohesion(vec4 currentPos, vec4 currentVel)\n{\n     float d = 0.2;\n    vec2 totalVelocity = vec2(0);\n    vec2 acc = vec2(0);\n    float num = 0.0;\n    for (float y = 0.0; y < scale.y; y++)\n    {\n      for (float x = 0.0; x < scale.x; x++) \n      { \n        vec2 neighborUV = vec2(x+0.5, y+0.5)/scale.xy;\n        vec4 neighborPos = texture( posTexture, neighborUV);\n        float distance = length(currentPos.xy - neighborPos.xy);\n        if(currentPos.xy!= neighborPos.xy && distance <= d)\n        {\n          totalVelocity += neighborPos.xy;\n          num++;\n        }\n      }\n    }\n    if(num > 0.0)\n    {\n      totalVelocity /= num;\n      totalVelocity = totalVelocity - currentPos.xy;\n      totalVelocity = normalize(totalVelocity) * maxSpeed;\n      acc = totalVelocity - currentVel.xy;\n      if(length(acc) > maxForce)\n      {\n        acc = normalize(acc) * maxForce;\n      }\n    }\n    return acc;\n}\n\nvec2 separation(vec4 currentPos, vec4 currentVel)\n{\n     float d = 0.2;\n    vec2 totalVelocity = vec2(0);\n    vec2 acc = vec2(0);\n    float num = 0.0;\n    for (float y = 0.0; y < scale.y; y++)\n    {\n      for (float x = 0.0; x < scale.x; x++) \n      { \n        vec2 neighborUV = vec2(x+0.5, y+0.5)/scale.xy;\n        vec4 neighborPos = texture( posTexture, neighborUV);\n        float distance = length(currentPos.xy - neighborPos.xy);\n        if(currentPos.xy!= neighborPos.xy && distance <= d)\n        {\n          vec2 diff = currentPos.xy - neighborPos.xy;\n          diff /= distance;\n          totalVelocity += diff;\n          num++;\n        }\n      }\n    }\n    if(num > 0.0)\n    {\n      totalVelocity /= num;\n      totalVelocity = normalize(totalVelocity) * maxSpeed;\n      acc = totalVelocity - currentVel.xy;\n      if(length(acc) > maxForce)\n      {\n        acc = normalize(acc) * maxForce;\n      }\n    }\n    return acc;\n}\n\nvoid main() \n{ \n      vec2 uv = vec2(gl_FragCoord.xy)/ scale;\n      vec4 currentPos = texture( posTexture, uv);\n      vec4 currentVel = texture( velTexture, uv);\n\n      vec2 acc;\n      acc += align(currentPos, currentVel) * alignmentScale;\n      acc += cohesion(currentPos, currentVel) * cohesionScale;\n      acc += separation(currentPos, currentVel) * separationScale;\n    \n    currentPos.xy += currentVel.xy;\n\n    if(currentPos.x >= 1.0)\n    {\n      currentPos.x = -1.0;\n    }\n    else if(currentPos.x <= -1.0)\n    {\n      currentPos.x = 1.0;\n    }\n\n    if(currentPos.y >= 1.0)\n    {\n      currentPos.y = -1.0;\n    }\n    else if(currentPos.y <= -1.0)\n    {\n      currentPos.y = 1.0;\n    }\n\n    currentVel.xy += acc;\n\n    o_newPos = currentPos;\n    o_newVel = currentVel;\n    \n\t\t\t\n\t}"]) 
+    shaderSource = glslify(["#version 300 es\nprecision highp float;\n#define GLSLIFY 1\n\n  uniform sampler2D posTexture; \n  uniform sampler2D velTexture; //xy is postion, zw is acceleration\n  uniform vec2 scale;\n  uniform bool isMouseDown;\n  uniform vec2 mousePos;\n  uniform float time;\n  //UI\n uniform float maxForce;\n uniform float maxSpeed;\n uniform float alignmentScale;\n uniform float cohesionScale;\n uniform float separationScale;\n uniform bool bmouseCentral;\n uniform bool bmousePredator;\n\nlayout(location = 0) out vec4 o_newPos;\nlayout(location = 1) out vec4 o_newVel;\n\nvec2 align(vec4 currentPos, vec4 currentVel)\n{\n    float d = 0.2;\n    vec2 totalVelocity = vec2(0);\n    vec2 acc = vec2(0);\n    float num = 0.0;\n    for (float y = 0.0; y < scale.y; y++)\n    {\n      for (float x = 0.0; x < scale.x; x++) \n      { \n        vec2 neighborUV = vec2(x+0.5, y+0.5)/scale.xy;\n        vec4 neighborPos = texture( posTexture, neighborUV);\n        float distance = length(currentPos.xy - neighborPos.xy);\n        if(currentPos.xy!= neighborPos.xy && distance <= d)\n        {\n          totalVelocity += texture( velTexture, neighborUV).xy;\n          num++;\n        }\n      }\n    }\n    if(num > 0.0)\n    {\n      totalVelocity /= num;\n      totalVelocity = normalize(totalVelocity) * maxSpeed;\n      acc = totalVelocity - currentVel.xy;\n      if(length(acc) > maxForce)\n      {\n        acc = normalize(acc) * maxForce;\n      }\n    }\n    return acc;\n}\n\nvec2 cohesion(vec4 currentPos, vec4 currentVel)\n{\n     float d = 0.2;\n    vec2 totalVelocity = vec2(0);\n    vec2 acc = vec2(0);\n    float num = 0.0;\n\n    if(bmouseCentral)\n      {\n         totalVelocity += mousePos;\n         num++; \n      }\n      else\n      {\n         for (float y = 0.0; y < scale.y; y++)\n          {\n            for (float x = 0.0; x < scale.x; x++) \n            { \n              vec2 neighborUV = vec2(x+0.5, y+0.5)/scale.xy;\n              vec4 neighborPos = texture( posTexture, neighborUV);\n              float distance = length(currentPos.xy - neighborPos.xy);\n              if(currentPos.xy!= neighborPos.xy && distance <= d)\n              {\n                totalVelocity += neighborPos.xy;\n                num++;\n              }\n            }\n          }\n      }\n   \n    if(num > 0.0)\n    {\n      totalVelocity /= num;\n      totalVelocity = totalVelocity - currentPos.xy;\n      totalVelocity = normalize(totalVelocity) * maxSpeed;\n      acc = totalVelocity - currentVel.xy;\n      if(length(acc) > maxForce)\n      {\n        acc = normalize(acc) * maxForce;\n      }\n    }\n    return acc;\n}\n\nvec2 separation(vec4 currentPos, vec4 currentVel)\n{\n    float d = 0.2;\n    vec2 totalVelocity = vec2(0);\n    vec2 acc = vec2(0);\n    float num = 0.0;\n    for (float y = 0.0; y < scale.y; y++)\n    {\n      for (float x = 0.0; x < scale.x; x++) \n      { \n        vec2 neighborUV = vec2(x+0.5, y+0.5)/scale.xy;\n        vec4 neighborPos = texture( posTexture, neighborUV);\n        float distance = length(currentPos.xy - neighborPos.xy);\n        if(currentPos.xy!= neighborPos.xy && distance <= d)\n        {\n          vec2 diff = currentPos.xy - neighborPos.xy;\n          diff /= distance;\n          totalVelocity += diff;\n          num++;\n        }\n      }\n    }\n\n    if(bmousePredator)\n      {\n        float distance = length(currentPos.xy - mousePos);\n        if(distance <= d)\n        {\n           vec2 diff = currentPos.xy - mousePos;\n            diff /= distance;\n            totalVelocity += diff * 100000.0;\n            num++;\n        }\n         \n      }\n\n    if(num > 0.0)\n    {\n      totalVelocity /= num;\n      totalVelocity = normalize(totalVelocity) * maxSpeed;\n      acc = totalVelocity - currentVel.xy;\n      if(length(acc) > maxForce)\n      {\n        acc = normalize(acc) * maxForce;\n      }\n    }\n    return acc;\n}\n\nvoid main() \n{ \n      vec2 uv = vec2(gl_FragCoord.xy)/ scale;\n      vec4 currentPos = texture( posTexture, uv);\n      vec4 currentVel = texture( velTexture, uv);\n\n      vec2 acc;\n      acc += align(currentPos, currentVel) * alignmentScale;\n      acc += cohesion(currentPos, currentVel) * cohesionScale;\n      acc += separation(currentPos, currentVel) * separationScale;\n    \n    currentPos.xy += currentVel.xy;\n\n    if(currentPos.x >= 1.0)\n    {\n      currentPos.x = -1.0;\n    }\n    else if(currentPos.x <= -1.0)\n    {\n      currentPos.x = 1.0;\n    }\n\n    if(currentPos.y >= 1.0)\n    {\n      currentPos.y = -1.0;\n    }\n    else if(currentPos.y <= -1.0)\n    {\n      currentPos.y = 1.0;\n    }\n\n    currentVel.xy += acc;\n\n    o_newPos = currentPos;\n    o_newVel = currentVel;\n    \n\t\t\t\n\t}"]) 
     const fragmentShaderRender = gl.createShader( gl.FRAGMENT_SHADER ) 
     gl.shaderSource( fragmentShaderRender, shaderSource ) 
     gl.compileShader( fragmentShaderRender ) 
@@ -101,6 +106,9 @@ UmaxSpeed = gl.getUniformLocation( programRender, 'maxSpeed' )
 UalignmentScale = gl.getUniformLocation( programRender, 'alignmentScale' ) 
 UcohesionScale = gl.getUniformLocation( programRender, 'cohesionScale' ) 
 UseparationScale = gl.getUniformLocation( programRender, 'separationScale' ) 
+UbmouseCentral = gl.getUniformLocation( programRender, 'bmouseCentral' ) 
+UbmousePredator  = gl.getUniformLocation( programRender, 'bmousePredator' ) 
+
 
     let verts2 = new Float32Array(numPoints * numPoints);
     for (var i = 0; i < numPoints * numPoints; i++)
@@ -206,14 +214,13 @@ var pixelSize = 4
       gl.bindBuffer( gl.ARRAY_BUFFER, vertBuffer ) 
       gl.vertexAttribPointer( 0, 2, gl.FLOAT, false, 0, 0 ) 
       gl.enableVertexAttribArray( 0 )
-      // use the framebuffer to write to our texFront texture
+
       gl.framebufferTexture2D( gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texPosFront, 0 ) 
       gl.framebufferTexture2D( gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT1, gl.TEXTURE_2D, texVelFront, 0 ) 
       //
       gl.drawBuffers( [gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1] );
 
-      // set viewport to be the size of our state (reaction diffusion simulation) 
-      // here, this represents the size that will be drawn onto our texture 
+
       gl.viewport(0, 0, numPoints, numPoints ) 
       gl.activeTexture(gl.TEXTURE0)
       gl.bindTexture( gl.TEXTURE_2D, texPosBack ) 
@@ -225,26 +232,20 @@ var pixelSize = 4
       gl.bindFramebuffer( gl.FRAMEBUFFER, fb2 )
       gl.framebufferTexture2D( gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texPosBack, 0 ) 
       gl.framebufferTexture2D( gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT1, gl.TEXTURE_2D, texVelBack, 0 ) 
-            gl.drawBuffers( [gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1] );
-      // set our viewport to be the size of our canvas 
-      // so that it will fill it entirely 
+       gl.drawBuffers( [gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1] );
+
       gl.viewport(0, 0, numPoints, numPoints )
-      // select the texture we would like to draw the the screen. 
-      // note that webgl does not allow you to write to / read from the 
-      // same texture in a single render pass. Because of the swap, we're 
-      // displaying the state of our simulation ****before**** this render pass (frame) 
       gl.activeTexture(gl.TEXTURE0)
       gl.bindTexture( gl.TEXTURE_2D, texPosFront ) 
        gl.activeTexture(gl.TEXTURE1)
       gl.bindTexture( gl.TEXTURE_2D, texVelFront ) 
-      // put simulation on screen 
       gl.drawArrays( gl.TRIANGLES, 0, 6 ) 
     }
   
   const draw = function() { 
 
-          window.requestAnimationFrame( draw ) 
-            gl.clearColor(0,0,0,1)
+  window.requestAnimationFrame( draw ) 
+  gl.clearColor(0,0,0,1)
   gl.clear(gl.COLOR_BUFFER_BIT)
  var now = Date.now();
     acumulateTime +=  now - lastTime;
@@ -270,6 +271,8 @@ var pixelSize = 4
      gl.uniform1f( UseparationScale,  myGui.separationScale)
 
 
+gl.uniform1i( UbmouseCentral, myGui.mouseCentral ) 
+ gl.uniform1i( UbmousePredator, myGui.mousePredator ) 
 
       //assign texture unit
       gl.uniform1i(UposTexturePingPong, 0); 
@@ -322,6 +325,10 @@ var pixelSize = 4
   //console.log("y:" + y);
   mouseX = x / canvas.width;
   mouseY = (canvas.height - y) / canvas.height;
+  //transfer mouse positon to [-1,1]
+  mouseX = mouseX * 2.0 - 1.0;
+  mouseY = mouseY * 2.0 - 1.0;
+
 
 
   //console.log("mouseX:" + mouseX);

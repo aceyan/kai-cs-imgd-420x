@@ -15,6 +15,7 @@
   let UposTextureDrawPoints;
   let UmaxForce, UmaxSpeed;
   let UalignmentScale, UcohesionScale, UseparationScale;
+  let UbmouseCentral, UbmousePredator;
 
 
   const numPoints = 100;// number of points = numPoints * numPoints
@@ -27,6 +28,8 @@ var MyGUI = function() {
 this.alignmentScale = 1;
 this.cohesionScale = 1;
 this.separationScale = 1;
+this.mouseCentral = false;
+this.mousePredator = false;
   this.frameRate = 34;
 
 };
@@ -38,14 +41,16 @@ gui.add(myGui, 'maxSpeed', 0, 0.1);
 gui.add(myGui, 'alignmentScale', 0, 5);
 gui.add(myGui, 'cohesionScale', 0, 5);
 gui.add(myGui, 'separationScale', 0, 5);
+gui.add(myGui, 'mouseCentral');
+gui.add(myGui, 'mousePredator');
    gui.add(myGui, 'frameRate', 0, 60);
 
 
   let canvas = document.getElementById( 'gl' )
      let gl = canvas.getContext( 'webgl2' )
 
-    canvas.width = 1024
-    canvas.height = 728
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
     let verts = [ 
       1, 1, 
       -1, 1, 
@@ -100,6 +105,9 @@ UmaxSpeed = gl.getUniformLocation( programRender, 'maxSpeed' )
 UalignmentScale = gl.getUniformLocation( programRender, 'alignmentScale' ) 
 UcohesionScale = gl.getUniformLocation( programRender, 'cohesionScale' ) 
 UseparationScale = gl.getUniformLocation( programRender, 'separationScale' ) 
+UbmouseCentral = gl.getUniformLocation( programRender, 'bmouseCentral' ) 
+UbmousePredator  = gl.getUniformLocation( programRender, 'bmousePredator' ) 
+
 
     let verts2 = new Float32Array(numPoints * numPoints);
     for (var i = 0; i < numPoints * numPoints; i++)
@@ -205,14 +213,13 @@ var pixelSize = 4
       gl.bindBuffer( gl.ARRAY_BUFFER, vertBuffer ) 
       gl.vertexAttribPointer( 0, 2, gl.FLOAT, false, 0, 0 ) 
       gl.enableVertexAttribArray( 0 )
-      // use the framebuffer to write to our texFront texture
+
       gl.framebufferTexture2D( gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texPosFront, 0 ) 
       gl.framebufferTexture2D( gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT1, gl.TEXTURE_2D, texVelFront, 0 ) 
       //
       gl.drawBuffers( [gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1] );
 
-      // set viewport to be the size of our state (reaction diffusion simulation) 
-      // here, this represents the size that will be drawn onto our texture 
+
       gl.viewport(0, 0, numPoints, numPoints ) 
       gl.activeTexture(gl.TEXTURE0)
       gl.bindTexture( gl.TEXTURE_2D, texPosBack ) 
@@ -224,26 +231,20 @@ var pixelSize = 4
       gl.bindFramebuffer( gl.FRAMEBUFFER, fb2 )
       gl.framebufferTexture2D( gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texPosBack, 0 ) 
       gl.framebufferTexture2D( gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT1, gl.TEXTURE_2D, texVelBack, 0 ) 
-            gl.drawBuffers( [gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1] );
-      // set our viewport to be the size of our canvas 
-      // so that it will fill it entirely 
+       gl.drawBuffers( [gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1] );
+
       gl.viewport(0, 0, numPoints, numPoints )
-      // select the texture we would like to draw the the screen. 
-      // note that webgl does not allow you to write to / read from the 
-      // same texture in a single render pass. Because of the swap, we're 
-      // displaying the state of our simulation ****before**** this render pass (frame) 
       gl.activeTexture(gl.TEXTURE0)
       gl.bindTexture( gl.TEXTURE_2D, texPosFront ) 
        gl.activeTexture(gl.TEXTURE1)
       gl.bindTexture( gl.TEXTURE_2D, texVelFront ) 
-      // put simulation on screen 
       gl.drawArrays( gl.TRIANGLES, 0, 6 ) 
     }
   
   const draw = function() { 
 
-          window.requestAnimationFrame( draw ) 
-            gl.clearColor(0,0,0,1)
+  window.requestAnimationFrame( draw ) 
+  gl.clearColor(0,0,0,1)
   gl.clear(gl.COLOR_BUFFER_BIT)
  var now = Date.now();
     acumulateTime +=  now - lastTime;
@@ -269,6 +270,8 @@ var pixelSize = 4
      gl.uniform1f( UseparationScale,  myGui.separationScale)
 
 
+gl.uniform1i( UbmouseCentral, myGui.mouseCentral ) 
+ gl.uniform1i( UbmousePredator, myGui.mousePredator ) 
 
       //assign texture unit
       gl.uniform1i(UposTexturePingPong, 0); 
@@ -321,6 +324,10 @@ var pixelSize = 4
   //console.log("y:" + y);
   mouseX = x / canvas.width;
   mouseY = (canvas.height - y) / canvas.height;
+  //transfer mouse positon to [-1,1]
+  mouseX = mouseX * 2.0 - 1.0;
+  mouseY = mouseY * 2.0 - 1.0;
+
 
 
   //console.log("mouseX:" + mouseX);
