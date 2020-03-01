@@ -1,5 +1,5 @@
 #version 300 es
-  precision highp float; 
+  precision mediump float; 
   layout(location = 0) in float a_index; 
   uniform vec2 scale;
   uniform sampler2D posTexture; 

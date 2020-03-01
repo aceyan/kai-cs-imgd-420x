@@ -1,5 +1,5 @@
 #version 300 es
-precision highp float;
+precision mediump float;
   uniform sampler2D posTexture; 
   uniform sampler2D velTexture; //xy is postion, zw is acceleration
   uniform vec2 scale;

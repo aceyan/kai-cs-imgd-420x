@@ -18,7 +18,7 @@
   let UbmouseCentral, UbmousePredator;
 
 
-  const numPoints = 100;// number of points = numPoints * numPoints
+  const numPoints = 50;// number of points = numPoints * numPoints
 
 window.onload = function() { 
 var MyGUI = function() {
