@@ -1,5 +1,5 @@
 #version 300 es
-precision mediump float;
+precision highp float;
   uniform vec2 scale; 
   out vec4 o_finalColor;
   void main() { 

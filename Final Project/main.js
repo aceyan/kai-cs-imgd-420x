@@ -14,7 +14,7 @@
   let UposTexturePingPong, UvelTexturePingPong;
   let UposTextureDrawPoints;
 
-  const numPoints = 8;// number of points = numPoints * numPoints
+  const numPoints = 50;// number of points = numPoints * numPoints
 
 window.onload = function() { 
 var MyGUI = function() {
@@ -36,9 +36,9 @@ myGui = new MyGUI();
 
   let canvas = document.getElementById( 'gl' )
      let gl = canvas.getContext( 'webgl2' )
-    size = 512
-    canvas.width = size
-    canvas.height = size
+
+    canvas.width = 1024
+    canvas.height = 728
     let verts = [ 
       1, 1, 
       -1, 1, 
@@ -150,8 +150,8 @@ UposTextureDrawPoints = gl.getUniformLocation( programDraw, 'posTexture' )
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST ) 
     gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA32F, numPoints, numPoints, 0, gl.RGBA, gl.FLOAT, null )
 
-const pixelSize = 4 
-    const initState = new Float32Array( numPoints * numPoints * pixelSize ) 
+var pixelSize = 4 
+    var initState = new Float32Array( numPoints * numPoints * pixelSize ) 
     
     const reset = function(pct) { 
       for( let i = 0; i < numPoints * numPoints; i++ ) 
@@ -181,7 +181,8 @@ const pixelSize = 4
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST ) 
     gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA32F, numPoints, numPoints, 0, gl.RGBA, gl.FLOAT, null )
 
-    reset(0.01);
+reset(0.005)
+      
 
   const fb = gl.createFramebuffer() 
     const fb2 = gl.createFramebuffer() 
