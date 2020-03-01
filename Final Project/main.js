@@ -18,11 +18,12 @@
   let UbmouseCentral, UbmousePredator;
 
 
-  const numPoints = 50;// number of points = numPoints * numPoints
+  var numPoints = 50;// number of points = numPoints * numPoints
 
 window.onload = function() { 
 var MyGUI = function() {
   this.name = "Kai's Final Project - GPGPU Flocking";
+  this.numberOfPoints = numPoints * numPoints;
   this.maxForce = 0.001;
  this.maxSpeed = 0.008;
 this.alignmentScale = 1;
@@ -36,6 +37,7 @@ this.mousePredator = false;
 myGui = new MyGUI();
   var gui = new dat.GUI();
   gui.add(myGui, 'name');
+gui.add(myGui, 'numberOfPoints', 2, 10000);
 gui.add(myGui, 'maxForce', 0, 0.002);
 gui.add(myGui, 'maxSpeed', 0, 0.1);
 gui.add(myGui, 'alignmentScale', 0, 5);
@@ -170,10 +172,12 @@ UposTextureDrawPoints = gl.getUniformLocation( programDraw, 'posTexture' )
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST ) 
     gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA32F, numPoints, numPoints, 0, gl.RGBA, gl.FLOAT, null )
 
-var pixelSize = 4 
-    var initState = new Float32Array( numPoints * numPoints * pixelSize ) 
+
+   
     
     const reset = function(pct) { 
+      var pixelSize = 4 
+       var initState = new Float32Array( numPoints * numPoints * pixelSize ) 
       for( let i = 0; i < numPoints * numPoints; i++ ) 
       { 
           var ii = pixelSize * i;
@@ -258,6 +262,15 @@ var pixelSize = 4
     acumulateTime = 0;
 
       timeCounter++;
+
+      var numP = Math.floor(Math.sqrt(myGui.numberOfPoints));
+      if(numP != numPoints)
+      {
+        numPoints = numP;
+        resetTexture();
+        //console.log("numPoints:" + numPoints);
+      }
+
       gl.useProgram( programRender )   
       gl.uniform2f( UmousePos, mouseX, mouseY ) 
       gl.uniform1i( UisMouseDown, isMouseDown ) 
@@ -312,7 +325,6 @@ gl.uniform1i( UbmouseCentral, myGui.mouseCentral )
   const onMousedown = function(ev) 
   { 
     isMouseDown = true;
-  
   }
 
   const onMouseMove = function(ev) 
@@ -342,5 +354,27 @@ gl.uniform1i( UbmouseCentral, myGui.mouseCentral )
   canvas.onmousedown  = onMousedown;
   canvas.onmouseup  = onMouseUp;
   canvas.onmousemove  = onMouseMove;
+
+
+
+ const resetTexture = function() 
+  { 
+    gl.bindTexture( gl.TEXTURE_2D, texPosFront ) 
+    gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA32F, numPoints, numPoints, 0, gl.RGBA, gl.FLOAT, null ) 
+
+
+    gl.bindTexture( gl.TEXTURE_2D, texVelFront ) 
+    gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA32F, numPoints, numPoints, 0, gl.RGBA, gl.FLOAT, null ) 
+    
+  
+    gl.bindTexture( gl.TEXTURE_2D, texPosBack ) 
+    gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA32F, numPoints, numPoints, 0, gl.RGBA, gl.FLOAT, null )
+    reset(1);
+
+    gl.bindTexture( gl.TEXTURE_2D, texVelBack ) 
+    gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA32F, numPoints, numPoints, 0, gl.RGBA, gl.FLOAT, null )
+     reset(0.005);
+  }
+
 }
 
