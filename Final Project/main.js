@@ -21,7 +21,7 @@ var MyGUI = function() {
   this.name = "Kai's Final Project";
 
   this.reactionSpeed = 1;
-    this.frameRate = 24;
+    this.frameRate = 34;
    this.reset = function() { reset(0.25) };
    this.clearScreen = function() { reset(1) };
 };
@@ -126,24 +126,24 @@ UposTextureDrawPoints = gl.getUniformLocation( programDraw, 'posTexture' )
     gl.enableVertexAttribArray( 0 )
     gl.vertexAttribPointer( 0, 1, gl.FLOAT, false, 0,0 )
     
-    let texFront = gl.createTexture() //for pos
-    gl.bindTexture( gl.TEXTURE_2D, texFront ) 
+    let texPosFront = gl.createTexture() //xy for posistion
+    gl.bindTexture( gl.TEXTURE_2D, texPosFront ) 
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT ) 
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT ) 
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST )
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST ) 
     gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA32F, numPoints, numPoints, 0, gl.RGBA, gl.FLOAT, null ) 
 
-     let texFront2 = gl.createTexture()  //for vel
-    gl.bindTexture( gl.TEXTURE_2D, texFront2 ) 
+     let texVelFront = gl.createTexture()  //xy for velocity, a channel for acceleration
+    gl.bindTexture( gl.TEXTURE_2D, texVelFront ) 
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT ) 
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT ) 
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST )
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST ) 
     gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA32F, numPoints, numPoints, 0, gl.RGBA, gl.FLOAT, null ) 
     
-    let texBack = gl.createTexture() //for pos
-    gl.bindTexture( gl.TEXTURE_2D, texBack ) 
+    let texPosBack = gl.createTexture() //xy for posistion
+    gl.bindTexture( gl.TEXTURE_2D, texPosBack ) 
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT ) 
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT ) 
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST ) 
@@ -173,8 +173,8 @@ const pixelSize = 4
     }
         reset(1);
 
-     let texBack2 = gl.createTexture()  //for vel
-    gl.bindTexture( gl.TEXTURE_2D, texBack2 ) 
+     let texVelBack = gl.createTexture()  //xy for velocity, a channel for acceleration
+    gl.bindTexture( gl.TEXTURE_2D, texVelBack ) 
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT ) 
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT ) 
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST ) 
@@ -193,8 +193,8 @@ const pixelSize = 4
       gl.vertexAttribPointer( 0, 2, gl.FLOAT, false, 0, 0 ) 
       gl.enableVertexAttribArray( 0 )
       // use the framebuffer to write to our texFront texture
-      gl.framebufferTexture2D( gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texFront, 0 ) 
-      gl.framebufferTexture2D( gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT1, gl.TEXTURE_2D, texFront2, 0 ) 
+      gl.framebufferTexture2D( gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texPosFront, 0 ) 
+      gl.framebufferTexture2D( gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT1, gl.TEXTURE_2D, texVelFront, 0 ) 
       //
       gl.drawBuffers( [gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1] );
 
@@ -202,15 +202,15 @@ const pixelSize = 4
       // here, this represents the size that will be drawn onto our texture 
       gl.viewport(0, 0, numPoints, numPoints ) 
       gl.activeTexture(gl.TEXTURE0)
-      gl.bindTexture( gl.TEXTURE_2D, texBack ) 
+      gl.bindTexture( gl.TEXTURE_2D, texPosBack ) 
       gl.activeTexture(gl.TEXTURE1)
-      gl.bindTexture( gl.TEXTURE_2D, texBack2 ) 
+      gl.bindTexture( gl.TEXTURE_2D, texVelBack ) 
 
       gl.drawArrays( gl.TRIANGLES, 0, 6 ) 
     
       gl.bindFramebuffer( gl.FRAMEBUFFER, fb2 )
-      gl.framebufferTexture2D( gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texBack, 0 ) 
-      gl.framebufferTexture2D( gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT1, gl.TEXTURE_2D, texBack2, 0 ) 
+      gl.framebufferTexture2D( gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texPosBack, 0 ) 
+      gl.framebufferTexture2D( gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT1, gl.TEXTURE_2D, texVelBack, 0 ) 
             gl.drawBuffers( [gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1] );
       // set our viewport to be the size of our canvas 
       // so that it will fill it entirely 
@@ -220,9 +220,9 @@ const pixelSize = 4
       // same texture in a single render pass. Because of the swap, we're 
       // displaying the state of our simulation ****before**** this render pass (frame) 
       gl.activeTexture(gl.TEXTURE0)
-      gl.bindTexture( gl.TEXTURE_2D, texFront ) 
+      gl.bindTexture( gl.TEXTURE_2D, texPosFront ) 
        gl.activeTexture(gl.TEXTURE1)
-      gl.bindTexture( gl.TEXTURE_2D, texFront2 ) 
+      gl.bindTexture( gl.TEXTURE_2D, texVelFront ) 
       // put simulation on screen 
       gl.drawArrays( gl.TRIANGLES, 0, 6 ) 
     }
@@ -268,7 +268,7 @@ const pixelSize = 4
       gl.viewport(0, 0, canvas.width, canvas.height )
       // select the texture we would like to draw the the screen. 
       gl.activeTexture(gl.TEXTURE0)
-      gl.bindTexture( gl.TEXTURE_2D, texBack ) 
+      gl.bindTexture( gl.TEXTURE_2D, texPosBack ) 
       // use our drawing (copy) shader 
       gl.useProgram( programDraw ) 
       gl.uniform1i(UposTextureDrawPoints, 0); 
