@@ -20,7 +20,7 @@
 
 
   var numPoints = 50;// number of points = numPoints * numPoints
-
+  const MAX_POINTS = 14400;
 window.onload = function() { 
 var MyGUI = function() {
   this.name = "Kai's Final Project - GPGPU Flocking";
@@ -38,7 +38,7 @@ this.mousePredator = false;
 myGui = new MyGUI();
   var gui = new dat.GUI();
   gui.add(myGui, 'name');
-gui.add(myGui, 'numberOfPoints', 2, 10000);
+gui.add(myGui, 'numberOfPoints', 2, MAX_POINTS);
 gui.add(myGui, 'maxForce', 0, 0.002);
 gui.add(myGui, 'maxSpeed', 0, 0.1);
 gui.add(myGui, 'alignmentScale', 0, 5);
@@ -112,8 +112,8 @@ UbmouseCentral = gl.getUniformLocation( programRender, 'bmouseCentral' )
 UbmousePredator  = gl.getUniformLocation( programRender, 'bmousePredator' ) 
 
 
-    let verts2 = new Float32Array(numPoints * numPoints);
-    for (var i = 0; i < numPoints * numPoints; i++)
+    let verts2 = new Float32Array(MAX_POINTS);
+    for (var i = 0; i < MAX_POINTS; i++)
     {
       verts2[i] = i;
     }
