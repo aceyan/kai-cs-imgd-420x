@@ -15,7 +15,7 @@
   let UposTexturePingPong, UvelTexturePingPong;
   let UposTextureDrawPoints;
 
-  const numPoints = 4;// number of points = numPoints * numPoints
+  const numPoints = 8;// number of points = numPoints * numPoints
 
 window.onload = function() { 
 var MyGUI = function() {
@@ -67,7 +67,7 @@ myGui = new MyGUI();
     gl.compileShader( vertexShader )
     console.log( gl.getShaderInfoLog( vertexShader ) ) // create fragment shader to run our simulation
     
-    shaderSource = glslify(["#version 300 es\nprecision mediump float;\n#define GLSLIFY 1\n\n  uniform sampler2D posTexture; \n  uniform sampler2D velTexture; \n  uniform vec2 scale;\n  uniform bool isMouseDown;\n  uniform vec2 mousePos;\n  uniform float time;\n \nlayout(location = 0) out vec4 o_finalColor;\nlayout(location = 1) out vec4 o_finalColor1;\n\nvoid main() \n{ \n\n \n  \t\tvec2 uv = vec2(gl_FragCoord.xy)/ scale;\n    \n\tif(isMouseDown)\n\t{\n\t\n\t\to_finalColor = vec4( 1.0, 1.0, 0 , 1.0); \n    o_finalColor1 = vec4( 1.0, 0.0, 0 , 1.0); \n\t}\n\telse\n\t{\n    vec4 currentPos = texture( posTexture, uv);\n    vec4 currentVel = texture( velTexture, uv);\n    //col.x += 0.01;\ncurrentPos.x += currentVel.x;\ncurrentPos.y += currentVel.y;\n\n     o_finalColor = currentPos;\n    o_finalColor1 = currentVel;\n    \n\t\t\t\n\t}\n\n}"]) 
+    shaderSource = glslify(["#version 300 es\nprecision mediump float;\n#define GLSLIFY 1\n\n  uniform sampler2D posTexture; \n  uniform sampler2D velTexture; //xy is postion, zw is acceleration\n  uniform vec2 scale;\n  uniform bool isMouseDown;\n  uniform vec2 mousePos;\n  uniform float time;\n \nlayout(location = 0) out vec4 o_newPos;\nlayout(location = 1) out vec4 o_newVel;\n\nvoid main() \n{ \n\nvec2 uv = vec2(gl_FragCoord.xy)/ scale;\n vec4 currentPos = texture( posTexture, uv);\n  vec4 currentVel = texture( velTexture, uv);\n\n    float d = 0.2;\n    vec2 totalVelocity;\n    vec2 acc;\n    float num = 0.0;\n    for (float y = 0.0; y < scale.y; y++)\n    {\n      for (float x = 0.0; x < scale.x; x++) \n      { \n        vec2 neighborUV = vec2(x+0.5, y+0.5)/scale.xy;\n        vec4 neighborPos = texture( posTexture, neighborUV);\n        float distance = length(currentPos - neighborPos);\n        if(currentPos!= neighborPos && distance <= d)\n        {\n          totalVelocity += texture( velTexture, neighborUV).xy;\n          num++;\n        }\n      }\n    }\n    if(num > 0.0)\n    {\n      totalVelocity /= num;\n    }\n    \n    acc = totalVelocity - currentVel.xy;\n\n  \t\t\n    \n\n    currentPos.xy += currentVel.xy;\n    currentVel.xy += acc;\n    currentVel.zw = acc;\n\n    o_newPos = currentPos;\n    o_newVel = currentVel;\n    \n\t\t\t\n\t}"]) 
     const fragmentShaderRender = gl.createShader( gl.FRAGMENT_SHADER ) 
     gl.shaderSource( fragmentShaderRender, shaderSource ) 
     gl.compileShader( fragmentShaderRender ) 
@@ -135,7 +135,7 @@ UposTextureDrawPoints = gl.getUniformLocation( programDraw, 'posTexture' )
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST ) 
     gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA32F, numPoints, numPoints, 0, gl.RGBA, gl.FLOAT, null ) 
 
-     let texVelFront = gl.createTexture()  //xy for velocity, a channel for acceleration
+     let texVelFront = gl.createTexture()  //xy for velocity, zw channel for acceleration
     gl.bindTexture( gl.TEXTURE_2D, texVelFront ) 
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT ) 
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT ) 
@@ -161,9 +161,9 @@ const pixelSize = 4
          
             initState[ ii ] = pct * (Math.random() * 2 - 1);
             initState[ ii + 1] = pct * (Math.random() * 2 - 1 );
-            initState[ ii + 2] = 1 ;
+            initState[ ii + 2] = 0 ;
 
-            initState[ ii + 3] = 1 ;
+            initState[ ii + 3] = 0 ;
 
       } 
       
@@ -174,7 +174,7 @@ const pixelSize = 4
     }
         reset(1);
 
-     let texVelBack = gl.createTexture()  //xy for velocity, a channel for acceleration
+     let texVelBack = gl.createTexture()  //xy for velocity, zw channel for acceleration
     gl.bindTexture( gl.TEXTURE_2D, texVelBack ) 
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT ) 
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT ) 

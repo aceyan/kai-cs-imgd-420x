@@ -14,7 +14,7 @@
   let UposTexturePingPong, UvelTexturePingPong;
   let UposTextureDrawPoints;
 
-  const numPoints = 4;// number of points = numPoints * numPoints
+  const numPoints = 8;// number of points = numPoints * numPoints
 
 window.onload = function() { 
 var MyGUI = function() {
@@ -134,7 +134,7 @@ UposTextureDrawPoints = gl.getUniformLocation( programDraw, 'posTexture' )
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST ) 
     gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA32F, numPoints, numPoints, 0, gl.RGBA, gl.FLOAT, null ) 
 
-     let texVelFront = gl.createTexture()  //xy for velocity, a channel for acceleration
+     let texVelFront = gl.createTexture()  //xy for velocity, zw channel for acceleration
     gl.bindTexture( gl.TEXTURE_2D, texVelFront ) 
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT ) 
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT ) 
@@ -160,9 +160,9 @@ const pixelSize = 4
          
             initState[ ii ] = pct * (Math.random() * 2 - 1);
             initState[ ii + 1] = pct * (Math.random() * 2 - 1 );
-            initState[ ii + 2] = 1 ;
+            initState[ ii + 2] = 0 ;
 
-            initState[ ii + 3] = 1 ;
+            initState[ ii + 3] = 0 ;
 
       } 
       
@@ -173,7 +173,7 @@ const pixelSize = 4
     }
         reset(1);
 
-     let texVelBack = gl.createTexture()  //xy for velocity, a channel for acceleration
+     let texVelBack = gl.createTexture()  //xy for velocity, zw channel for acceleration
     gl.bindTexture( gl.TEXTURE_2D, texVelBack ) 
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT ) 
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT ) 
