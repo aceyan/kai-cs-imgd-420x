@@ -3,8 +3,8 @@
    let time = 0
   let lastTime = 0;
   let acumulateTime = 0;
-  let mouseX;
-  let mouseY;
+  let mouseX = 0;
+  let mouseY = 0;
   let isMouseDown;
   let timeCounter = 0;
   let gyroscopeX = 0;
