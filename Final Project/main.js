@@ -32,7 +32,7 @@ this.separationScale = 1;
 this.mouseCentral = false;
 this.mousePredator = false;
   this.frameRate = 34;
-
+this.xxx = 0;
 };
 myGui = new MyGUI();
   var gui = new dat.GUI();
@@ -46,7 +46,7 @@ gui.add(myGui, 'separationScale', 0, 5);
 gui.add(myGui, 'mouseCentral');
 gui.add(myGui, 'mousePredator');
    gui.add(myGui, 'frameRate', 0, 60);
-
+gui.add(myGui, 'xxx', -90, 90);
 
   let canvas = document.getElementById( 'gl' )
      let gl = canvas.getContext( 'webgl2' )
@@ -375,6 +375,15 @@ gl.uniform1i( UbmouseCentral, myGui.mouseCentral )
     gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA32F, numPoints, numPoints, 0, gl.RGBA, gl.FLOAT, null )
      reset(0.005);
   }
+
+  window.addEventListener('deviceorientation', function(e){
+   console.log('absolute: ' + e.absolute)
+   console.log('alpha: ' + e.alpha)
+   console.log('beta: ' + e.beta)
+   console.log('gamma: ' + e.gamma)
+   myGui.xxx = e.alpha;
+   document.getElementById("demo").innerHTML = 'alpha: ' + e.alpha;
+});
 
 }
 
