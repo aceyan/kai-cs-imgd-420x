@@ -14,6 +14,8 @@ precision mediump float;
  uniform float separationScale;
  uniform bool bmouseCentral;
  uniform bool bmousePredator;
+ uniform bool bgyroscope;
+ uniform vec2 gyroscopePos;
 
 layout(location = 0) out vec4 o_newPos;
 layout(location = 1) out vec4 o_newVel;
@@ -62,6 +64,11 @@ vec2 cohesion(vec4 currentPos, vec4 currentVel)
     if(bmouseCentral)
       {
          totalVelocity += mousePos;
+         num++; 
+      }
+      else if(bgyroscope)
+      {
+         totalVelocity += gyroscopePos;
          num++; 
       }
       else

@@ -8,6 +8,8 @@
   let mouseY;
   let isMouseDown;
   let timeCounter = 0;
+  let gyroscopeX = 0;
+  let gyroscopeY = 0;
 
   let UisMouseDown;
   let UmousePos;
@@ -17,7 +19,8 @@
   let UmaxForce, UmaxSpeed;
   let UalignmentScale, UcohesionScale, UseparationScale;
   let UbmouseCentral, UbmousePredator;
-
+  let Ubgyroscope;
+  let UgyroscopePos;
 
   var numPoints = 50;// number of points = numPoints * numPoints
   const MAX_POINTS = 14400;
@@ -32,8 +35,9 @@ this.cohesionScale = 1;
 this.separationScale = 1;
 this.mouseCentral = false;
 this.mousePredator = false;
+this.gyroscope = false;
   this.frameRate = 34;
-this.xxx = 0;
+
 };
 myGui = new MyGUI();
   var gui = new dat.GUI();
@@ -46,8 +50,9 @@ gui.add(myGui, 'cohesionScale', 0, 5);
 gui.add(myGui, 'separationScale', 0, 5);
 gui.add(myGui, 'mouseCentral');
 gui.add(myGui, 'mousePredator');
+gui.add(myGui, 'gyroscope');
    gui.add(myGui, 'frameRate', 0, 60);
-gui.add(myGui, 'xxx', -90, 90);
+
 
   let canvas = document.getElementById( 'gl' )
      let gl = canvas.getContext( 'webgl2' )
@@ -81,7 +86,7 @@ gui.add(myGui, 'xxx', -90, 90);
     gl.compileShader( vertexShader )
     console.log( gl.getShaderInfoLog( vertexShader ) ) // create fragment shader to run our simulation
     
-    shaderSource = glslify(["#version 300 es\nprecision mediump float;\n#define GLSLIFY 1\n\n  uniform sampler2D posTexture; \n  uniform sampler2D velTexture; //xy is postion, zw is acceleration\n  uniform vec2 scale;\n  uniform bool isMouseDown;\n  uniform vec2 mousePos;\n  uniform float time;\n  //UI\n uniform float maxForce;\n uniform float maxSpeed;\n uniform float alignmentScale;\n uniform float cohesionScale;\n uniform float separationScale;\n uniform bool bmouseCentral;\n uniform bool bmousePredator;\n\nlayout(location = 0) out vec4 o_newPos;\nlayout(location = 1) out vec4 o_newVel;\n\nvec2 align(vec4 currentPos, vec4 currentVel)\n{\n    float d = 0.2;\n    vec2 totalVelocity = vec2(0);\n    vec2 acc = vec2(0);\n    float num = 0.0;\n    for (float y = 0.0; y < scale.y; y++)\n    {\n      for (float x = 0.0; x < scale.x; x++) \n      { \n        vec2 neighborUV = vec2(x+0.5, y+0.5)/scale.xy;\n        vec4 neighborPos = texture( posTexture, neighborUV);\n        float distance = length(currentPos.xy - neighborPos.xy);\n        if(currentPos.xy!= neighborPos.xy && distance <= d)\n        {\n          totalVelocity += texture( velTexture, neighborUV).xy;\n          num++;\n        }\n      }\n    }\n    if(num > 0.0)\n    {\n      totalVelocity /= num;\n      totalVelocity = normalize(totalVelocity) * maxSpeed;\n      acc = totalVelocity - currentVel.xy;\n      if(length(acc) > maxForce)\n      {\n        acc = normalize(acc) * maxForce;\n      }\n    }\n    return acc;\n}\n\nvec2 cohesion(vec4 currentPos, vec4 currentVel)\n{\n     float d = 0.2;\n    vec2 totalVelocity = vec2(0);\n    vec2 acc = vec2(0);\n    float num = 0.0;\n\n    if(bmouseCentral)\n      {\n         totalVelocity += mousePos;\n         num++; \n      }\n      else\n      {\n         for (float y = 0.0; y < scale.y; y++)\n          {\n            for (float x = 0.0; x < scale.x; x++) \n            { \n              vec2 neighborUV = vec2(x+0.5, y+0.5)/scale.xy;\n              vec4 neighborPos = texture( posTexture, neighborUV);\n              float distance = length(currentPos.xy - neighborPos.xy);\n              if(currentPos.xy!= neighborPos.xy && distance <= d)\n              {\n                totalVelocity += neighborPos.xy;\n                num++;\n              }\n            }\n          }\n      }\n   \n    if(num > 0.0)\n    {\n      totalVelocity /= num;\n      totalVelocity = totalVelocity - currentPos.xy;\n      totalVelocity = normalize(totalVelocity) * maxSpeed;\n      acc = totalVelocity - currentVel.xy;\n      if(length(acc) > maxForce)\n      {\n        acc = normalize(acc) * maxForce;\n      }\n    }\n    return acc;\n}\n\nvec2 separation(vec4 currentPos, vec4 currentVel)\n{\n    float d = 0.2;\n    vec2 totalVelocity = vec2(0);\n    vec2 acc = vec2(0);\n    float num = 0.0;\n    for (float y = 0.0; y < scale.y; y++)\n    {\n      for (float x = 0.0; x < scale.x; x++) \n      { \n        vec2 neighborUV = vec2(x+0.5, y+0.5)/scale.xy;\n        vec4 neighborPos = texture( posTexture, neighborUV);\n        float distance = length(currentPos.xy - neighborPos.xy);\n        if(currentPos.xy!= neighborPos.xy && distance <= d)\n        {\n          vec2 diff = currentPos.xy - neighborPos.xy;\n          diff /= distance;\n          totalVelocity += diff;\n          num++;\n        }\n      }\n    }\n\n    if(bmousePredator)\n      {\n        float distance = length(currentPos.xy - mousePos);\n        if(distance <= d)\n        {\n           vec2 diff = currentPos.xy - mousePos;\n            diff /= distance;\n            totalVelocity += diff * 100000.0;\n            num++;\n        }\n         \n      }\n\n    if(num > 0.0)\n    {\n      totalVelocity /= num;\n      totalVelocity = normalize(totalVelocity) * maxSpeed;\n      acc = totalVelocity - currentVel.xy;\n      if(length(acc) > maxForce)\n      {\n        acc = normalize(acc) * maxForce;\n      }\n    }\n    return acc;\n}\n\nvoid main() \n{ \n      vec2 uv = vec2(gl_FragCoord.xy)/ scale;\n      vec4 currentPos = texture( posTexture, uv);\n      vec4 currentVel = texture( velTexture, uv);\n\n      vec2 acc;\n      acc += align(currentPos, currentVel) * alignmentScale;\n      acc += cohesion(currentPos, currentVel) * cohesionScale;\n      acc += separation(currentPos, currentVel) * separationScale;\n    \n    currentPos.xy += currentVel.xy;\n\n    if(currentPos.x >= 1.0)\n    {\n      currentPos.x = -1.0;\n    }\n    else if(currentPos.x <= -1.0)\n    {\n      currentPos.x = 1.0;\n    }\n\n    if(currentPos.y >= 1.0)\n    {\n      currentPos.y = -1.0;\n    }\n    else if(currentPos.y <= -1.0)\n    {\n      currentPos.y = 1.0;\n    }\n\n    currentVel.xy += acc;\n\n    o_newPos = currentPos;\n    o_newVel = currentVel;\n    \n\t\t\t\n\t}"]) 
+    shaderSource = glslify(["#version 300 es\nprecision mediump float;\n#define GLSLIFY 1\n\n  uniform sampler2D posTexture; \n  uniform sampler2D velTexture; //xy is postion, zw is acceleration\n  uniform vec2 scale;\n  uniform bool isMouseDown;\n  uniform vec2 mousePos;\n  uniform float time;\n  //UI\n uniform float maxForce;\n uniform float maxSpeed;\n uniform float alignmentScale;\n uniform float cohesionScale;\n uniform float separationScale;\n uniform bool bmouseCentral;\n uniform bool bmousePredator;\n uniform bool bgyroscope;\n uniform vec2 gyroscopePos;\n\nlayout(location = 0) out vec4 o_newPos;\nlayout(location = 1) out vec4 o_newVel;\n\nvec2 align(vec4 currentPos, vec4 currentVel)\n{\n    float d = 0.2;\n    vec2 totalVelocity = vec2(0);\n    vec2 acc = vec2(0);\n    float num = 0.0;\n    for (float y = 0.0; y < scale.y; y++)\n    {\n      for (float x = 0.0; x < scale.x; x++) \n      { \n        vec2 neighborUV = vec2(x+0.5, y+0.5)/scale.xy;\n        vec4 neighborPos = texture( posTexture, neighborUV);\n        float distance = length(currentPos.xy - neighborPos.xy);\n        if(currentPos.xy!= neighborPos.xy && distance <= d)\n        {\n          totalVelocity += texture( velTexture, neighborUV).xy;\n          num++;\n        }\n      }\n    }\n    if(num > 0.0)\n    {\n      totalVelocity /= num;\n      totalVelocity = normalize(totalVelocity) * maxSpeed;\n      acc = totalVelocity - currentVel.xy;\n      if(length(acc) > maxForce)\n      {\n        acc = normalize(acc) * maxForce;\n      }\n    }\n    return acc;\n}\n\nvec2 cohesion(vec4 currentPos, vec4 currentVel)\n{\n     float d = 0.2;\n    vec2 totalVelocity = vec2(0);\n    vec2 acc = vec2(0);\n    float num = 0.0;\n\n    if(bmouseCentral)\n      {\n         totalVelocity += mousePos;\n         num++; \n      }\n      else if(bgyroscope)\n      {\n         totalVelocity += gyroscopePos;\n         num++; \n      }\n      else\n      {\n         for (float y = 0.0; y < scale.y; y++)\n          {\n            for (float x = 0.0; x < scale.x; x++) \n            { \n              vec2 neighborUV = vec2(x+0.5, y+0.5)/scale.xy;\n              vec4 neighborPos = texture( posTexture, neighborUV);\n              float distance = length(currentPos.xy - neighborPos.xy);\n              if(currentPos.xy!= neighborPos.xy && distance <= d)\n              {\n                totalVelocity += neighborPos.xy;\n                num++;\n              }\n            }\n          }\n      }\n   \n    if(num > 0.0)\n    {\n      totalVelocity /= num;\n      totalVelocity = totalVelocity - currentPos.xy;\n      totalVelocity = normalize(totalVelocity) * maxSpeed;\n      acc = totalVelocity - currentVel.xy;\n      if(length(acc) > maxForce)\n      {\n        acc = normalize(acc) * maxForce;\n      }\n    }\n    return acc;\n}\n\nvec2 separation(vec4 currentPos, vec4 currentVel)\n{\n    float d = 0.2;\n    vec2 totalVelocity = vec2(0);\n    vec2 acc = vec2(0);\n    float num = 0.0;\n    for (float y = 0.0; y < scale.y; y++)\n    {\n      for (float x = 0.0; x < scale.x; x++) \n      { \n        vec2 neighborUV = vec2(x+0.5, y+0.5)/scale.xy;\n        vec4 neighborPos = texture( posTexture, neighborUV);\n        float distance = length(currentPos.xy - neighborPos.xy);\n        if(currentPos.xy!= neighborPos.xy && distance <= d)\n        {\n          vec2 diff = currentPos.xy - neighborPos.xy;\n          diff /= distance;\n          totalVelocity += diff;\n          num++;\n        }\n      }\n    }\n\n    if(bmousePredator)\n      {\n        float distance = length(currentPos.xy - mousePos);\n        if(distance <= d)\n        {\n           vec2 diff = currentPos.xy - mousePos;\n            diff /= distance;\n            totalVelocity += diff * 100000.0;\n            num++;\n        }\n         \n      }\n\n    if(num > 0.0)\n    {\n      totalVelocity /= num;\n      totalVelocity = normalize(totalVelocity) * maxSpeed;\n      acc = totalVelocity - currentVel.xy;\n      if(length(acc) > maxForce)\n      {\n        acc = normalize(acc) * maxForce;\n      }\n    }\n    return acc;\n}\n\nvoid main() \n{ \n      vec2 uv = vec2(gl_FragCoord.xy)/ scale;\n      vec4 currentPos = texture( posTexture, uv);\n      vec4 currentVel = texture( velTexture, uv);\n\n      vec2 acc;\n      acc += align(currentPos, currentVel) * alignmentScale;\n      acc += cohesion(currentPos, currentVel) * cohesionScale;\n      acc += separation(currentPos, currentVel) * separationScale;\n    \n    currentPos.xy += currentVel.xy;\n\n    if(currentPos.x >= 1.0)\n    {\n      currentPos.x = -1.0;\n    }\n    else if(currentPos.x <= -1.0)\n    {\n      currentPos.x = 1.0;\n    }\n\n    if(currentPos.y >= 1.0)\n    {\n      currentPos.y = -1.0;\n    }\n    else if(currentPos.y <= -1.0)\n    {\n      currentPos.y = 1.0;\n    }\n\n    currentVel.xy += acc;\n\n    o_newPos = currentPos;\n    o_newVel = currentVel;\n    \n\t\t\t\n\t}"]) 
     const fragmentShaderRender = gl.createShader( gl.FRAGMENT_SHADER ) 
     gl.shaderSource( fragmentShaderRender, shaderSource ) 
     gl.compileShader( fragmentShaderRender ) 
@@ -110,6 +115,8 @@ UcohesionScale = gl.getUniformLocation( programRender, 'cohesionScale' )
 UseparationScale = gl.getUniformLocation( programRender, 'separationScale' ) 
 UbmouseCentral = gl.getUniformLocation( programRender, 'bmouseCentral' ) 
 UbmousePredator  = gl.getUniformLocation( programRender, 'bmousePredator' ) 
+Ubgyroscope = gl.getUniformLocation( programRender, 'bgyroscope' ) 
+UgyroscopePos  = gl.getUniformLocation( programRender, 'gyroscopePos' ) 
 
 
     let verts2 = new Float32Array(MAX_POINTS);
@@ -287,6 +294,9 @@ UposTextureDrawPoints = gl.getUniformLocation( programDraw, 'posTexture' )
 gl.uniform1i( UbmouseCentral, myGui.mouseCentral ) 
  gl.uniform1i( UbmousePredator, myGui.mousePredator ) 
 
+    gl.uniform1i( Ubgyroscope, myGui.gyroscope ) 
+      gl.uniform2f( UgyroscopePos, gyroscopeX, gyroscopeY ) 
+
       //assign texture unit
       gl.uniform1i(UposTexturePingPong, 0); 
       gl.uniform1i(UvelTexturePingPong, 1); 
@@ -378,12 +388,41 @@ gl.uniform1i( UbmouseCentral, myGui.mouseCentral )
   }
 
   window.addEventListener('deviceorientation', function(e){
-   console.log('absolute: ' + e.absolute)
-   console.log('alpha: ' + e.alpha)
-   console.log('beta: ' + e.beta)
-   console.log('gamma: ' + e.gamma)
-   myGui.xxx = e.alpha;
+   //console.log('absolute: ' + e.absolute)
+   //console.log('alpha: ' + e.alpha)
+   //console.log('beta: ' + e.beta)
+   //console.log('gamma: ' + e.gamma)
+
    document.getElementById("demo").innerHTML = 'alpha: ' + e.alpha + '   beta: ' + e.beta + '  gamma: ' + e.gamma;
+
+
+      //transfer orientaiton data to coordinate [-1,1]
+      var beta = e.beta;
+      if(beta > 90)
+      {
+        beta = 90;
+      }
+      else if(beta < -90)
+      {
+        beta = -90;
+      }
+
+      gyroscopeY = -beta / 90;
+
+       var gamma = e.gamma;
+      if(gamma > 90)
+      {
+        gamma = 90;
+      }
+      else if(gamma < -90)
+      {
+        gamma = -90;
+      }
+
+      gyroscopeX = gamma / 90;
+
+      //console.log('gyroscopeX: ' + gyroscopeX + " gyroscopeY:" + gyroscopeY);
+  
 });
 
 }
