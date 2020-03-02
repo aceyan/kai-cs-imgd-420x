@@ -392,7 +392,7 @@ gl.uniform1i( UbmouseCentral, myGui.mouseCentral )
    //console.log('beta: ' + e.beta)
    //console.log('gamma: ' + e.gamma)
 
-   document.getElementById("demo").innerHTML = 'alpha: ' + e.alpha + '   beta: ' + e.beta + '  gamma: ' + e.gamma;
+   //document.getElementById("demo").innerHTML = 'alpha: ' + e.alpha + '   beta: ' + e.beta + '  gamma: ' + e.gamma;
 
 
       //transfer orientaiton data to coordinate [-1,1]
