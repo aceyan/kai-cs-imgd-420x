@@ -43,3 +43,5 @@ This is Kai's github page for cs-imgd-420x class! welcome!
 - **ReadMe.md** (description, feedback and process of implementation document for assignment 4, readme! )
 - **dat.gui.js** ( js file from dat.js )
 - **bundle.js** ( all things are packed into it )
+
+### Final Project:
