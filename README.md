@@ -1,6 +1,8 @@
 # kai-cs-imgd-420x
 This is Kai's github page for cs-imgd-420x class! welcome!
 
+## Attention! Make sure you clean up your browser's cache to see the latest live running website updates！
+
 ## Directory structure
 ### Assignment 2 - Shader Live Coding:
 - **code.glsl** (glsl code for assignment 2 )
