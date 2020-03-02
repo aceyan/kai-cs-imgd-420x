@@ -1,11 +1,32 @@
 <!doctype html>
 <html lang='en'>
   <head>
-    <style>body{ margin:0 }</style>
+    <meta charset="uft-8">
+  <style>
+  	 body {
+        margin: 0;
+        background: black;
+      }
+
+      .info {
+        position: absolute;
+        top: 0px;
+        margin-left: 10px;
+        color: yellow;
+        font-family: sans-serif;
+        width: 1024px;
+        z-index: 1;
+        line-height:4pt
+      }
+  	    </style>
   </head>
   <body>
-  	<p id="demo">我的第一个段落</p>
     <canvas id='gl'></canvas>
+      	<div class="info">
+      <h5>Instruction - 1 : CHECK the mouseCentral on the UI, boids/particles will follow mouse cursor</h5>
+      <h5>Instruction - 2 : CHECK the mousePredator on the GUI,  boids/particles will avoid the mouse cursor</h5>
+      <h5>Instruction - 3 : CHECK the gyroscope on the GUI to use gyroscope on mobile devices to interact with particles (chrome can also simulate the gyroscope!)</h5>
+    </div>
   </body>
   <!-- vertex shader, as simple as possible -->
 <script src='./bundle.js' type='text/javascript'></script>
