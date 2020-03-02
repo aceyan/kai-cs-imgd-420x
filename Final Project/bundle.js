@@ -383,7 +383,7 @@ gl.uniform1i( UbmouseCentral, myGui.mouseCentral )
    console.log('beta: ' + e.beta)
    console.log('gamma: ' + e.gamma)
    myGui.xxx = e.alpha;
-   document.getElementById("demo").innerHTML = 'alpha: ' + e.alpha;
+   document.getElementById("demo").innerHTML = 'alpha: ' + e.alpha + '   beta: ' + e.beta + '  gamma: ' + e.gamma;
 });
 
 }
