@@ -35,7 +35,7 @@ this.separationScale = 1;
 this.mouseCentral = false;
 this.mousePredator = false;
 this.gyroscope = false;
-  this.frameRate = 34;
+  this.frameRate = 60;
 
 };
 myGui = new MyGUI();
