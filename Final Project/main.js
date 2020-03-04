@@ -20,9 +20,13 @@
   let UbmouseCentral, UbmousePredator;
   let Ubgyroscope;
   let UgyroscopePos;
+  //
+  let UfeedbackAmount;
+  let UfeedbackTextureOld, UfeedbackTextureNew;
+  let texfeedbackFront, texfeedbackBack
 
   var numPoints = 50;// number of points = numPoints * numPoints
-  const MAX_POINTS = 14400;
+  const MAX_POINTS = 22500;
 window.onload = function() { 
 var MyGUI = function() {
   this.name = "Kai's Final Project - GPGPU Flocking";
@@ -35,7 +39,9 @@ this.separationScale = 1;
 this.mouseCentral = false;
 this.mousePredator = false;
 this.gyroscope = false;
-  this.frameRate = 60;
+  this.motionBlur = 0.01;
+  this.frameRate = 35;
+
 
 };
 myGui = new MyGUI();
@@ -50,6 +56,7 @@ gui.add(myGui, 'separationScale', 0, 5);
 gui.add(myGui, 'mouseCentral');
 gui.add(myGui, 'mousePredator');
 gui.add(myGui, 'gyroscope');
+   gui.add(myGui, 'motionBlur', 0, 1.0);
    gui.add(myGui, 'frameRate', 0, 60);
 
 
@@ -76,8 +83,7 @@ gui.add(myGui, 'gyroscope');
     let vertBuffer = gl.createBuffer() 
     gl.bindBuffer( gl.ARRAY_BUFFER, vertBuffer ) 
     gl.bufferData( gl.ARRAY_BUFFER, new Float32Array(verts), gl.STATIC_DRAW ) 
-    gl.vertexAttribPointer( 0, 2, gl.FLOAT, false, 0, 0 ) 
-    gl.enableVertexAttribArray( 0 )
+
   
     let shaderSource = glslify.file( './vs.glsl' ) 
     const vertexShader = gl.createShader( gl.VERTEX_SHADER ) 
@@ -85,21 +91,18 @@ gui.add(myGui, 'gyroscope');
     gl.compileShader( vertexShader )
     console.log( gl.getShaderInfoLog( vertexShader ) ) // create fragment shader to run our simulation
     
-    shaderSource = glslify.file( './fs_render.glsl' ) 
+    shaderSource = glslify.file( './fs_render_pos_vel.glsl' ) 
     const fragmentShaderRender = gl.createShader( gl.FRAGMENT_SHADER ) 
     gl.shaderSource( fragmentShaderRender, shaderSource ) 
     gl.compileShader( fragmentShaderRender ) 
     console.log( gl.getShaderInfoLog( fragmentShaderRender ) ) // create shader program const
       
+    //used to render position texture and velocity texture
     programRender = gl.createProgram() 
     gl.attachShader( programRender, vertexShader ) 
     gl.attachShader( programRender, fragmentShaderRender )
     gl.linkProgram( programRender )
     gl.useProgram( programRender )
-    
- 
-    gl.enableVertexAttribArray( 0 ) 
-    gl.vertexAttribPointer( 0, 2, gl.FLOAT, false, 0,0 ) 
       
 
     UisMouseDown = gl.getUniformLocation( programRender, 'isMouseDown' ) 
@@ -117,33 +120,64 @@ UbmousePredator  = gl.getUniformLocation( programRender, 'bmousePredator' )
 Ubgyroscope = gl.getUniformLocation( programRender, 'bgyroscope' ) 
 UgyroscopePos  = gl.getUniformLocation( programRender, 'gyroscopePos' ) 
 
+    
+    shaderSource = glslify.file( './fs_feedback.glsl' ) 
+    const fragmentShaderFeedBack = gl.createShader( gl.FRAGMENT_SHADER ) 
+    gl.shaderSource( fragmentShaderFeedBack, shaderSource ) 
+    gl.compileShader( fragmentShaderFeedBack ) 
+    console.log( gl.getShaderInfoLog( fragmentShaderFeedBack ) ) // create shader program const
+      
+     //used to draw feedback effect, motionblur
+    programFeedBack = gl.createProgram() 
+    gl.attachShader( programFeedBack, vertexShader ) 
+    gl.attachShader( programFeedBack, fragmentShaderFeedBack )
+    gl.linkProgram( programFeedBack )
+    gl.useProgram( programFeedBack )
+    
 
+    UfeedbackAmount  = gl.getUniformLocation( programFeedBack, 'feedbackAmount' ) 
+    UfeedbackTextureOld  = gl.getUniformLocation( programFeedBack, 'feedbackTextureOld' ) 
+    UfeedbackTextureNew  = gl.getUniformLocation( programFeedBack, 'feedbackTextureNew' ) 
+
+
+   shaderSource = glslify.file( './fs_drawScreen.glsl' ) 
+    const fragmentShaderScreen = gl.createShader( gl.FRAGMENT_SHADER ) 
+    gl.shaderSource( fragmentShaderScreen, shaderSource ) 
+    gl.compileShader( fragmentShaderScreen ) 
+    console.log( gl.getShaderInfoLog( fragmentShaderScreen ) ) 
+      
+    //just draw a texutre to screen
+    programDrawScreen = gl.createProgram() 
+    gl.attachShader( programDrawScreen, vertexShader ) 
+    gl.attachShader( programDrawScreen, fragmentShaderScreen )
+    gl.linkProgram( programDrawScreen )
+    gl.useProgram( programDrawScreen )
+
+    //vertex index
     let verts2 = new Float32Array(MAX_POINTS);
     for (var i = 0; i < MAX_POINTS; i++)
     {
       verts2[i] = i;
     }
 
+    //vertex buffer
     let vertBuffer2 = gl.createBuffer() 
     gl.bindBuffer( gl.ARRAY_BUFFER, vertBuffer2 ) 
     gl.bufferData( gl.ARRAY_BUFFER, verts2, gl.STATIC_DRAW ) 
-    gl.vertexAttribPointer( 0, 1, gl.FLOAT, false, 0, 0 ) 
-    gl.enableVertexAttribArray( 0 )
 
 
   shaderSource = glslify.file( './vs_drawPoint.glsl' ) 
    vertexShaderPoint = gl.createShader( gl.VERTEX_SHADER ) 
     gl.shaderSource( vertexShaderPoint, shaderSource ) 
     gl.compileShader( vertexShaderPoint )
-    console.log( gl.getShaderInfoLog( vertexShaderPoint ) ) // create fragment shader to run our simulation
-    // create shader program to draw our simulation to the screen 
-    shaderSource = glslify.file( './fs_draw.glsl' ) 
+    console.log( gl.getShaderInfoLog( vertexShaderPoint ) ) 
+    shaderSource = glslify.file( './fs_drawPoints.glsl' ) 
     fragmentShaderDraw = gl.createShader( gl.FRAGMENT_SHADER ) 
     gl.shaderSource( fragmentShaderDraw, shaderSource )
     gl.compileShader( fragmentShaderDraw ) 
     console.log( gl.getShaderInfoLog( fragmentShaderDraw ) ) 
       
-    // create shader program
+    //draw points to texture
     programDraw = gl.createProgram() 
     gl.attachShader( programDraw, vertexShaderPoint ) 
     gl.attachShader( programDraw, fragmentShaderDraw ) 
@@ -152,8 +186,6 @@ UgyroscopePos  = gl.getUniformLocation( programRender, 'gyroscopePos' )
 
 UposTextureDrawPoints = gl.getUniformLocation( programDraw, 'posTexture' ) 
 
-    gl.enableVertexAttribArray( 0 )
-    gl.vertexAttribPointer( 0, 1, gl.FLOAT, false, 0,0 )
     
     let texPosFront = gl.createTexture() //xy for posistion
     gl.bindTexture( gl.TEXTURE_2D, texPosFront ) 
@@ -163,7 +195,7 @@ UposTextureDrawPoints = gl.getUniformLocation( programDraw, 'posTexture' )
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST ) 
     gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA32F, numPoints, numPoints, 0, gl.RGBA, gl.FLOAT, null ) 
 
-     let texVelFront = gl.createTexture()  //xy for velocity, zw channel for acceleration
+     let texVelFront = gl.createTexture()  //xy for velocity
     gl.bindTexture( gl.TEXTURE_2D, texVelFront ) 
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT ) 
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT ) 
@@ -204,7 +236,7 @@ UposTextureDrawPoints = gl.getUniformLocation( programDraw, 'posTexture' )
     }
     reset(1);
 
-     let texVelBack = gl.createTexture()  //xy for velocity, zw channel for acceleration
+     let texVelBack = gl.createTexture()  //xy for velocity
     gl.bindTexture( gl.TEXTURE_2D, texVelBack ) 
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT ) 
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT ) 
@@ -213,10 +245,39 @@ UposTextureDrawPoints = gl.getUniformLocation( programDraw, 'posTexture' )
     gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA32F, numPoints, numPoints, 0, gl.RGBA, gl.FLOAT, null )
 
     reset(0.005)
+
+
+    texScreenNew = gl.createTexture() 
+    gl.bindTexture( gl.TEXTURE_2D, texScreenNew ) 
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT ) 
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT ) 
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST ) 
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST ) 
+    gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA, canvas.width, canvas.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null )
+
+    //textures for feedback effect
+    texfeedbackFront = gl.createTexture() 
+    gl.bindTexture( gl.TEXTURE_2D, texfeedbackFront ) 
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT ) 
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT ) 
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST ) 
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST ) 
+    gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA, canvas.width, canvas.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null )
+
+    texfeedbackBack = gl.createTexture()  
+    gl.bindTexture( gl.TEXTURE_2D, texfeedbackBack ) 
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT ) 
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT ) 
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST ) 
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST ) 
+    gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA, canvas.width, canvas.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null )
       
 
-  const fb = gl.createFramebuffer() 
+    //used as target of drawing position and velocity texture
+    const fb = gl.createFramebuffer() 
     const fb2 = gl.createFramebuffer() 
+    //for feedback
+    const fb_feedback = gl.createFramebuffer() 
   
     const pingpong = function() {
       gl.bindFramebuffer( gl.FRAMEBUFFER, fb ) 
@@ -255,8 +316,7 @@ UposTextureDrawPoints = gl.getUniformLocation( programDraw, 'posTexture' )
   const draw = function() { 
 
   window.requestAnimationFrame( draw ) 
-  gl.clearColor(0,0,0,1)
-  gl.clear(gl.COLOR_BUFFER_BIT)
+
  var now = Date.now();
     acumulateTime +=  now - lastTime;
     lastTime = now;
@@ -305,27 +365,82 @@ gl.uniform1i( UbmouseCentral, myGui.mouseCentral )
 
       pingpong()
  
-      // use the default framebuffer object by passing null 
-      gl.bindFramebuffer( gl.FRAMEBUFFER, null ) 
-    
+
+
+      //render particles to texture
+
+      gl.bindFramebuffer( gl.FRAMEBUFFER, fb_feedback ) 
+      gl.framebufferTexture2D( gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texScreenNew, 0 )
       gl.bindBuffer( gl.ARRAY_BUFFER, vertBuffer2 ) 
       gl.vertexAttribPointer( 0, 1, gl.FLOAT, false, 0, 0 ) 
       gl.enableVertexAttribArray( 0 )
-      // set our viewport to be the size of our canvas 
-      // so that it will fill it entirely 
+
       gl.viewport(0, 0, canvas.width, canvas.height )
-      // select the texture we would like to draw the the screen. 
+
       gl.activeTexture(gl.TEXTURE0)
       gl.bindTexture( gl.TEXTURE_2D, texPosBack ) 
-      // use our drawing (copy) shader 
+
       gl.useProgram( programDraw ) 
       gl.uniform1i(UposTextureDrawPoints, 0); 
 
       scale = gl.getUniformLocation( programDraw, 'scale' ) 
       gl.uniform2f( scale, numPoints, numPoints ) 
-      // put simulation on screen
-      gl.drawArrays( gl.POINTS, 0, numPoints * numPoints  ) 
+
+      gl.clearColor(0,0,0,1)
+      gl.clear(gl.COLOR_BUFFER_BIT)
+      gl.drawArrays( gl.POINTS, 0, numPoints * numPoints  )
+
+
+
+      //feedback!
+      gl.bindFramebuffer( gl.FRAMEBUFFER, fb_feedback ) 
+       gl.framebufferTexture2D( gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texfeedbackFront, 0 )
+      gl.bindBuffer( gl.ARRAY_BUFFER, vertBuffer ) 
+      gl.vertexAttribPointer( 0, 2, gl.FLOAT, false, 0, 0 ) 
+      gl.enableVertexAttribArray( 0 )
+
+      gl.viewport(0, 0, canvas.width, canvas.height )
+      
+      gl.activeTexture(gl.TEXTURE0)
+      gl.bindTexture( gl.TEXTURE_2D, texfeedbackBack ) 
+      gl.activeTexture(gl.TEXTURE1)
+      gl.bindTexture( gl.TEXTURE_2D, texScreenNew ) 
+
+      gl.useProgram( programFeedBack )
+      // 
+      gl.uniform1f(UfeedbackAmount, myGui.motionBlur); 
+      gl.uniform1i(UfeedbackTextureOld, 0); 
+      gl.uniform1i(UfeedbackTextureNew, 1); 
+      scale = gl.getUniformLocation( programFeedBack, 'scale' ) 
+      gl.uniform2f( scale, canvas.width, canvas.height  )
+      gl.drawArrays( gl.TRIANGLES, 0, 6 ) 
+
+
+      //draw to screen
+      gl.bindFramebuffer( gl.FRAMEBUFFER, null ) 
+      gl.bindBuffer( gl.ARRAY_BUFFER, vertBuffer ) 
+      gl.vertexAttribPointer( 0, 2, gl.FLOAT, false, 0, 0 ) 
+      gl.enableVertexAttribArray( 0 )
+
+      gl.viewport(0, 0, canvas.width, canvas.height )
+      
+      gl.activeTexture(gl.TEXTURE0)
+      gl.bindTexture( gl.TEXTURE_2D, texfeedbackBack ) 
+
+      gl.useProgram( programDrawScreen )
+      // 
+      scale = gl.getUniformLocation( programDrawScreen, 'scale' ) 
+      gl.uniform2f( scale, canvas.width, canvas.height  )
+
+      gl.clearColor(0,0,0,1)
+      gl.clear(gl.COLOR_BUFFER_BIT)
+      gl.drawArrays( gl.TRIANGLES, 0, 6 ) 
         
+
+  let tmp = texfeedbackFront
+  texfeedbackFront = texfeedbackBack
+  texfeedbackBack = tmp
+
 
     }
      
@@ -386,6 +501,7 @@ gl.uniform1i( UbmouseCentral, myGui.mouseCentral )
      reset(0.005);
   }
 
+  //gyroscope interaction!
   window.addEventListener('deviceorientation', function(e){
    //console.log('absolute: ' + e.absolute)
    //console.log('alpha: ' + e.alpha)

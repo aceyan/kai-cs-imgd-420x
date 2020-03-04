@@ -1,7 +1,7 @@
 #version 300 es
 precision mediump float;
   uniform sampler2D posTexture; 
-  uniform sampler2D velTexture; //xy is postion, zw is acceleration
+  uniform sampler2D velTexture; //xy is postion
   uniform vec2 scale;
   uniform bool isMouseDown;
   uniform vec2 mousePos;
