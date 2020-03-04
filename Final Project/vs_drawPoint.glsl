@@ -9,7 +9,5 @@
   	uv.y = ( a_index / scale.x + 0.5 ) / scale.y;
   	vec4 currentPos = texture( posTexture, uv); 
   	gl_PointSize = 2.5;
-    gl_Position = vec4(currentPos.xy, 0, 1.0);
-
-    //gl_Position = vec4(a_index * 0.1 ,0, 0, 1.0);
+    gl_Position = vec4(currentPos.xy, 0, 1.0);//use position from texture!
   } 

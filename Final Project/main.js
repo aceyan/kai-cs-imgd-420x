@@ -24,6 +24,7 @@
   let UfeedbackAmount;
   let UfeedbackTextureOld, UfeedbackTextureNew;
   let texfeedbackFront, texfeedbackBack
+  let UisEnableRainBow;
 
   var numPoints = 50;// number of points = numPoints * numPoints
   const MAX_POINTS = 22500;
@@ -39,6 +40,7 @@ this.separationScale = 1;
 this.mouseCentral = false;
 this.mousePredator = false;
 this.gyroscope = false;
+this.I_Love_Rainbow = true;
   this.motionBlur = 0.01;
   this.frameRate = 35;
 
@@ -56,6 +58,7 @@ gui.add(myGui, 'separationScale', 0, 5);
 gui.add(myGui, 'mouseCentral');
 gui.add(myGui, 'mousePredator');
 gui.add(myGui, 'gyroscope');
+gui.add(myGui, 'I_Love_Rainbow');
    gui.add(myGui, 'motionBlur', 0, 1.0);
    gui.add(myGui, 'frameRate', 0, 60);
 
@@ -107,7 +110,6 @@ gui.add(myGui, 'gyroscope');
 
     UisMouseDown = gl.getUniformLocation( programRender, 'isMouseDown' ) 
     UmousePos = gl.getUniformLocation( programRender, 'mousePos' ) 
-    uTime = gl.getUniformLocation( programRender, 'time' ) 
 UposTexturePingPong = gl.getUniformLocation( programRender, 'posTexture' ) 
 UvelTexturePingPong = gl.getUniformLocation( programRender, 'velTexture' ) 
 UmaxForce = gl.getUniformLocation( programRender, 'maxForce' ) 
@@ -185,7 +187,7 @@ UgyroscopePos  = gl.getUniformLocation( programRender, 'gyroscopePos' )
     gl.useProgram( programDraw )
 
 UposTextureDrawPoints = gl.getUniformLocation( programDraw, 'posTexture' ) 
-
+UisEnableRainBow = gl.getUniformLocation( programDraw, 'isEnableRainBow' ) 
     
     let texPosFront = gl.createTexture() //xy for posistion
     gl.bindTexture( gl.TEXTURE_2D, texPosFront ) 
@@ -341,7 +343,6 @@ UposTextureDrawPoints = gl.getUniformLocation( programDraw, 'posTexture' )
       gl.useProgram( programRender )   
       gl.uniform2f( UmousePos, mouseX, mouseY ) 
       gl.uniform1i( UisMouseDown, isMouseDown ) 
-      gl.uniform1f( uTime, timeCounter)
       //
  gl.uniform1f( UmaxSpeed, myGui.maxSpeed)
   gl.uniform1f( UmaxForce, myGui.maxForce)
@@ -385,6 +386,14 @@ gl.uniform1i( UbmouseCentral, myGui.mouseCentral )
 
       scale = gl.getUniformLocation( programDraw, 'scale' ) 
       gl.uniform2f( scale, numPoints, numPoints ) 
+
+      scaleOfScreen = gl.getUniformLocation( programDraw, 'scaleOfScreen' ) 
+      gl.uniform2f( scaleOfScreen, canvas.width, canvas.height ) 
+
+      uTime = gl.getUniformLocation( programDraw, 'time' )
+      gl.uniform1f( uTime, timeCounter ) 
+
+      gl.uniform1i( UisEnableRainBow, myGui.I_Love_Rainbow ) 
 
       gl.clearColor(0,0,0,1)
       gl.clear(gl.COLOR_BUFFER_BIT)

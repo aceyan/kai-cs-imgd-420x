@@ -1,11 +1,10 @@
 #version 300 es
 precision mediump float;
-  uniform sampler2D posTexture; 
-  uniform sampler2D velTexture; //xy is postion
+  uniform sampler2D posTexture; //xy is postion
+  uniform sampler2D velTexture; //xy is velocity
   uniform vec2 scale;
   uniform bool isMouseDown;
   uniform vec2 mousePos;
-  uniform float time;
   //UI
  uniform float maxForce;
  uniform float maxSpeed;
