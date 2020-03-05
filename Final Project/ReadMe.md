@@ -1,5 +1,11 @@
 # Kai's Final Project - GPGPU Flocking
 - URL of the live running website: https://aceyan.github.io/kai-cs-imgd-420x/Final%20Project/main.html
+- URL of video: 
+
+## Playing Instruction: 
+1. CHECK the mouseCentral on the UI, boids/particles will follow mouse cursor.
+2. CHECK the mousePredator on the UI,  boids/particles will avoid the mouse cursor.
+3. CHECK the gyroscope on the GUI to use gyroscope on mobile devices to interact with particles (Chrome destop version can simulate the gyroscope in DEBUG mode!)
 
 ## Technical Goal: 
 1. Explore the efficiency and visual effect of flocking algorithm by utilizing the parallel computing power of GPU. It's a little slow on the CPU. On my laptop, the picture is almost frozen when the number of objects goes up to 1000. I will implement the algorithm on GPU and try to optimize the performance to see how many objects can run on the GPU. And this project will explore the visual effect of flocking behavior when the number of individuals is very large.
