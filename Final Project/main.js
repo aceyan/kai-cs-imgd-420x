@@ -371,8 +371,8 @@ gl.uniform1i( UbmouseCentral, myGui.mouseCentral )
       gl.bindFramebuffer( gl.FRAMEBUFFER, fb_feedback ) 
       gl.framebufferTexture2D( gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texScreenNew, 0 )
       gl.bindBuffer( gl.ARRAY_BUFFER, vertBuffer2 ) 
-      gl.vertexAttribPointer( 0, 1, gl.FLOAT, false, 0, 0 ) 
-      gl.enableVertexAttribArray( 0 )
+      //gl.vertexAttribPointer( 0, 1, gl.FLOAT, false, 0, 0 ) 
+      //gl.enableVertexAttribArray( 0 )
 
       gl.viewport(0, 0, canvas.width, canvas.height )
 

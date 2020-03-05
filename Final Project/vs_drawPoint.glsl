@@ -1,6 +1,6 @@
 #version 300 es
   precision mediump float; 
-  layout(location = 0) in float a_index; 
+  //layout(location = 0) in float a_index; 
   uniform vec2 scale;
   uniform sampler2D posTexture; 
   void main() { 

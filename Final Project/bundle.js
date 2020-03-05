@@ -167,7 +167,7 @@ UgyroscopePos  = gl.getUniformLocation( programRender, 'gyroscopePos' )
     gl.bufferData( gl.ARRAY_BUFFER, verts2, gl.STATIC_DRAW ) 
 
 
-  shaderSource = glslify(["#version 300 es\n  precision mediump float;\n#define GLSLIFY 1\n \n  layout(location = 0) in float a_index; \n  uniform vec2 scale;\n  uniform sampler2D posTexture; \n  void main() { \n  \tvec2 uv;\n  \tuv.x = ( float(int(gl_InstanceID) % int(scale.x)) + 0.5 ) / scale.x;\n  \tuv.y = ( float(gl_InstanceID) / scale.x + 0.5 ) / scale.y;\n  \tvec4 currentPos = texture( posTexture, uv); \n  \tgl_PointSize = 2.5;\n    gl_Position = vec4(currentPos.xy, 0, 1.0);//use position from texture!\n  } "]) 
+  shaderSource = glslify(["#version 300 es\n  precision mediump float;\n#define GLSLIFY 1\n \n  //layout(location = 0) in float a_index; \n  uniform vec2 scale;\n  uniform sampler2D posTexture; \n  void main() { \n  \tvec2 uv;\n  \tuv.x = ( float(int(gl_InstanceID) % int(scale.x)) + 0.5 ) / scale.x;\n  \tuv.y = ( float(gl_InstanceID) / scale.x + 0.5 ) / scale.y;\n  \tvec4 currentPos = texture( posTexture, uv); \n  \tgl_PointSize = 2.5;\n    gl_Position = vec4(currentPos.xy, 0, 1.0);//use position from texture!\n  } "]) 
    vertexShaderPoint = gl.createShader( gl.VERTEX_SHADER ) 
     gl.shaderSource( vertexShaderPoint, shaderSource ) 
     gl.compileShader( vertexShaderPoint )
@@ -372,8 +372,8 @@ gl.uniform1i( UbmouseCentral, myGui.mouseCentral )
       gl.bindFramebuffer( gl.FRAMEBUFFER, fb_feedback ) 
       gl.framebufferTexture2D( gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texScreenNew, 0 )
       gl.bindBuffer( gl.ARRAY_BUFFER, vertBuffer2 ) 
-      gl.vertexAttribPointer( 0, 1, gl.FLOAT, false, 0, 0 ) 
-      gl.enableVertexAttribArray( 0 )
+      //gl.vertexAttribPointer( 0, 1, gl.FLOAT, false, 0, 0 ) 
+      //gl.enableVertexAttribArray( 0 )
 
       gl.viewport(0, 0, canvas.width, canvas.height )
 
