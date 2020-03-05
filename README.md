@@ -45,3 +45,12 @@ This is Kai's github page for cs-imgd-420x class! welcome!
 - **bundle.js** ( all things are packed into it )
 
 ### Final Project:
+- **main.html** (html index file for Final Project )
+- **main.js** (js module for Final Project )
+- **fs_drawPoints.glsl**, **fs_drawScreen.glsl**, **fs_feedback.glsl**, **fs_render_pos_vel.glsl**, **vs.glsl**, **vs_drawPoint.glsl** (shaders for Final Project )
+- **video URL** (URL of the video for Final Project : )
+- **website URL** (URL of the live running website for Final Project: https://aceyan.github.io/kai-cs-imgd-420x/Final%20Project/main.html)
+- **ReadMe.md** (Description, Technical Goal, Aesthetic Goals, Visual Aesthetics, Implementation and Feedback, read me! )
+- **dat.gui.js** ( js file from dat.js )
+- **bundle.js** ( all things are packed into it )
+- **flowMap** ( flow map of my program )
