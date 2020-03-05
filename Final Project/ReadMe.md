@@ -1,6 +1,7 @@
 # Kai's Final Project - GPGPU Flocking
 - URL of the live running website: https://aceyan.github.io/kai-cs-imgd-420x/Final%20Project/main.html
-- URL of video: 
+- URL of video playing on Desktop: https://www.youtube.com/watch?v=DczSlQ-ay_g&list=PLIMWjVyozR_z2WcWDcdieFXirRUM6_0_U&index=6&t=0s
+- URL of video playing on mobile using gyroscope: https://www.youtube.com/watch?v=ulkGM_eWtRU&list=PLIMWjVyozR_z2WcWDcdieFXirRUM6_0_U&index=7&t=0s
 
 This demo needs a browser that supports webGL2, EXT_color_buffer_float extension and GPU instance!
 
