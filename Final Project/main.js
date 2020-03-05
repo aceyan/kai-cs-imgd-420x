@@ -26,8 +26,8 @@
   let texfeedbackFront, texfeedbackBack
   let UisEnableRainBow;
 
-  var numPoints = 50;// number of points = numPoints * numPoints
-  const MAX_POINTS = 22500;
+  var numPoints = 60;// number of points = numPoints * numPoints
+  const MAX_POINTS = 32400;
 window.onload = function() { 
 var MyGUI = function() {
   this.name = "Kai's Final Project - GPGPU Flocking";
