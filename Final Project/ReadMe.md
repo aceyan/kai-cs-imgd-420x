@@ -17,6 +17,7 @@ This demo needs a browser that supports webGL2, EXT_color_buffer_float extension
 5. Explore how particles can interact with gravity by using gyroscope.
 6. Use UI to adjust various parameters to make it more convenient for users to see the influence of these parameters on flocking behavior and have a better understanding of the characteristics of this algorithm.
 7. Add post-effect motion blur.
+8. Add GPU instance.
 
 ## Aesthetic goals:
 The aesthetic goal of my project is to simulate large-scale flocking activity. When I played with code challenging tutorial, I found that I could only run 1000 instances on the my laptop. I was curious about the clustering of thousands of particles when using GPU to do calculation. And I've found that when we look at a group of just a few hundred members, it's easier to focus on individual behavior. But What happens when there are tens of thousands or more of them? My project will simulate the behavior of a large number of individuals. I will add motion blur for a better observation to the track of particle movement. The mouse interaction allows players to interact with the boids and have a better udnerstanding on the flocking behavior. Players can even interact on mobile devices using gyroscopes, where particles move in the direction of gravity. Of course, I will add my favorite rainbow color. I love rainbow!
