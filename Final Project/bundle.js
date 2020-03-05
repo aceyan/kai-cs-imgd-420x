@@ -157,11 +157,9 @@ UgyroscopePos  = gl.getUniformLocation( programRender, 'gyroscopePos' )
     gl.useProgram( programDrawScreen )
 
     //vertex index
-    let verts2 = new Float32Array(MAX_POINTS);
-    for (var i = 0; i < MAX_POINTS; i++)
-    {
-      verts2[i] = i;
-    }
+    //by using gpu instance, we can use only one vertex to draw multiple instances of them!
+    let verts2 = new Float32Array(1);
+    verts2[0] = 0;
 
     //vertex buffer
     let vertBuffer2 = gl.createBuffer() 
@@ -169,7 +167,7 @@ UgyroscopePos  = gl.getUniformLocation( programRender, 'gyroscopePos' )
     gl.bufferData( gl.ARRAY_BUFFER, verts2, gl.STATIC_DRAW ) 
 
 
-  shaderSource = glslify(["#version 300 es\n  precision mediump float;\n#define GLSLIFY 1\n \n  layout(location = 0) in float a_index; \n  uniform vec2 scale;\n  uniform sampler2D posTexture; \n  void main() { \n  \tvec2 uv;\n  \tuv.x = ( float(int(a_index) % int(scale.x)) + 0.5 ) / scale.x;\n  \tuv.y = ( a_index / scale.x + 0.5 ) / scale.y;\n  \tvec4 currentPos = texture( posTexture, uv); \n  \tgl_PointSize = 2.5;\n    gl_Position = vec4(currentPos.xy, 0, 1.0);//use position from texture!\n  } "]) 
+  shaderSource = glslify(["#version 300 es\n  precision mediump float;\n#define GLSLIFY 1\n \n  layout(location = 0) in float a_index; \n  uniform vec2 scale;\n  uniform sampler2D posTexture; \n  void main() { \n  \tvec2 uv;\n  \tuv.x = ( float(int(gl_InstanceID) % int(scale.x)) + 0.5 ) / scale.x;\n  \tuv.y = ( float(gl_InstanceID) / scale.x + 0.5 ) / scale.y;\n  \tvec4 currentPos = texture( posTexture, uv); \n  \tgl_PointSize = 2.5;\n    gl_Position = vec4(currentPos.xy, 0, 1.0);//use position from texture!\n  } "]) 
    vertexShaderPoint = gl.createShader( gl.VERTEX_SHADER ) 
     gl.shaderSource( vertexShaderPoint, shaderSource ) 
     gl.compileShader( vertexShaderPoint )
@@ -398,7 +396,9 @@ gl.uniform1i( UbmouseCentral, myGui.mouseCentral )
 
       gl.clearColor(0,0,0,1)
       gl.clear(gl.COLOR_BUFFER_BIT)
-      gl.drawArrays( gl.POINTS, 0, numPoints * numPoints  )
+
+      gl.drawArraysInstanced(gl.POINTS, 0, 1, numPoints * numPoints) //use gpu instance!!!
+      //gl.drawArrays( gl.POINTS, 0, numPoints * numPoints  )
 
 
 

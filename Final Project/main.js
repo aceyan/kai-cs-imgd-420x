@@ -156,11 +156,9 @@ UgyroscopePos  = gl.getUniformLocation( programRender, 'gyroscopePos' )
     gl.useProgram( programDrawScreen )
 
     //vertex index
-    let verts2 = new Float32Array(MAX_POINTS);
-    for (var i = 0; i < MAX_POINTS; i++)
-    {
-      verts2[i] = i;
-    }
+    //by using gpu instance, we can use only one vertex to draw multiple instances of them!
+    let verts2 = new Float32Array(1);
+    verts2[0] = 0;
 
     //vertex buffer
     let vertBuffer2 = gl.createBuffer() 
@@ -397,7 +395,9 @@ gl.uniform1i( UbmouseCentral, myGui.mouseCentral )
 
       gl.clearColor(0,0,0,1)
       gl.clear(gl.COLOR_BUFFER_BIT)
-      gl.drawArrays( gl.POINTS, 0, numPoints * numPoints  )
+
+      gl.drawArraysInstanced(gl.POINTS, 0, 1, numPoints * numPoints) //use gpu instance!!!
+      //gl.drawArrays( gl.POINTS, 0, numPoints * numPoints  )
 
 
 
