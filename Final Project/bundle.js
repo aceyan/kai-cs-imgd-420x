@@ -66,6 +66,11 @@ gui.add(myGui, 'I_Love_Rainbow');
 
   let canvas = document.getElementById( 'gl' )
      let gl = canvas.getContext( 'webgl2' )
+  if (!gl) {
+    alert("need webgl2!!!");
+    return;
+  }
+
 
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
