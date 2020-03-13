@@ -69,7 +69,13 @@ gui.add(myGui, 'I_Love_Rainbow');
     alert("need webgl2!!!");
     return;
   }
-
+  let numVTF = gl.getParameter(gl.MAX_VERTEX_TEXTURE_IMAGE_UNITS );
+  console.log("numVTF:" + numVTF);
+  if(numVTF == 0)
+  {
+    alert("need VTF(vertex texture fetch) support!");
+    return;
+  }
 
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
