@@ -119,6 +119,7 @@ vec2 separation(vec4 currentPos, vec4 currentVel)
         if(currentPos.xy!= neighborPos.xy && distance <= d)
         {
           vec2 diff = currentPos.xy - neighborPos.xy;
+          //diff = normalize(diff);
           diff /= distance;
           totalVelocity += diff;
           num++;
