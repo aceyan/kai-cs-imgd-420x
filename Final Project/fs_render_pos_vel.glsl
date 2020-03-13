@@ -134,7 +134,7 @@ vec2 separation(vec4 currentPos, vec4 currentVel)
         {
            vec2 diff = currentPos.xy - mousePos;
             diff /= distance;
-            totalVelocity += diff * 100000.0;
+            totalVelocity += diff * 1000.0;
             num++;
         }
          
