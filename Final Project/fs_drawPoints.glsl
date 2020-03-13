@@ -1,5 +1,5 @@
 #version 300 es
-precision mediump float;
+precision highp float;
 uniform float time;
 uniform vec2 scaleOfScreen; 
 out vec4 o_finalColor;
