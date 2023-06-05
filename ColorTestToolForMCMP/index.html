@@ -47,7 +47,7 @@
 <script type="text/javascript" src="dat.gui.js"></script>
 <script>
    var myGui
-	let ColorChangeType = 0;//R 1 G 2 B 3
+	let ColorChangeType = 0;//R 1 G 2 B 3 white 4
 	let currentColor = [0,0,0,0];
 window.onload = function() { 
 var MyGUI = function() {
@@ -59,6 +59,7 @@ var MyGUI = function() {
    this.ReStartR = function() { ColorChangeType = 1;  currentColor = [0,0,0,0];};
    this.ReStartG = function() { ColorChangeType = 2;  currentColor = [0,0,0,0]; };
    this.ReStartB = function() { ColorChangeType = 3;  currentColor = [0,0,0,0]; };
+   this.WhitePoint = function() { ColorChangeType = 4;  currentColor = [1,1,1,0]; };
 };
 myGui = new MyGUI();
   var gui = new dat.GUI();
@@ -70,6 +71,7 @@ myGui = new MyGUI();
   gui.add(myGui, 'ReStartG');
   gui.add(myGui, 'BStep', 0, 255);
   gui.add(myGui, 'ReStartB');
+  gui.add(myGui, 'WhitePoint'); 
 
     let canvas = document.querySelector( 'canvas' ) 
 	let size = window.innerHeight > window.innerWidth ? window.innerWidth : window.innerHeight ;
