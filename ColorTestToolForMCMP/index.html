@@ -47,8 +47,9 @@
 <script type="text/javascript" src="dat.gui.js"></script>
 <script>
    var myGui
-	let ColorChangeType = 0;//R 1 G 2 B 3 white 4
+	let ColorChangeType = 5;//R 1 G 2 B 3 white 4 5 setrgb
 	let currentColor = [0,0,0,0];
+	let TimeOutHandler;
 window.onload = function() { 
 var MyGUI = function() {
   this.name = 'Color Test Tool';
@@ -56,10 +57,14 @@ var MyGUI = function() {
   this.GStep = 10;
   this.BStep = 10;
   this.intervel = 1000;
-   this.ReStartR = function() { ColorChangeType = 1;  currentColor = [0,0,0,0];};
-   this.ReStartG = function() { ColorChangeType = 2;  currentColor = [0,0,0,0]; };
-   this.ReStartB = function() { ColorChangeType = 3;  currentColor = [0,0,0,0]; };
-   this.WhitePoint = function() { ColorChangeType = 4;  currentColor = [1,1,1,0]; };
+   this.ReStartR = function() { ColorChangeType = 1;  currentColor = [0,0,0,0]; animate();};
+   this.ReStartG = function() { ColorChangeType = 2;  currentColor = [0,0,0,0]; animate();};
+   this.ReStartB = function() { ColorChangeType = 3;  currentColor = [0,0,0,0]; animate();};
+   this.WhitePoint = function() { ColorChangeType = 4;  currentColor = [1,1,1,0]; animate();};
+   this.R = 0;
+   this.G = 0;
+   this.B = 0;	
+   this.SetRGB = function() { ColorChangeType = 5;  currentColor = [this.R,this.G,this.B,0]; animate();};
 };
 myGui = new MyGUI();
   var gui = new dat.GUI();
@@ -72,6 +77,10 @@ myGui = new MyGUI();
   gui.add(myGui, 'BStep', 0, 255);
   gui.add(myGui, 'ReStartB');
   gui.add(myGui, 'WhitePoint'); 
+  gui.add(myGui, 'R', 0, 255);
+  gui.add(myGui, 'G', 0, 255);
+  gui.add(myGui, 'B', 0, 255);
+  gui.add(myGui, 'SetRGB'); 
 
     let canvas = document.querySelector( 'canvas' ) 
 	let size = window.innerHeight > window.innerWidth ? window.innerWidth : window.innerHeight ;
@@ -132,7 +141,6 @@ myGui = new MyGUI();
 	
 	const draw = function(color) { 
       
-
       gl.bindFramebuffer( gl.FRAMEBUFFER, null ) 
     
       gl.viewport(0, 0, canvas.width, canvas.height )
@@ -163,6 +171,12 @@ myGui = new MyGUI();
 			currentColor[2] += myGui.BStep / 255.0;
 			if(currentColor[2] > 1) currentColor[2] = 1;
 			break;
+			case 5:
+			currentColor[0] = currentColor[0]/ 255.0;
+			currentColor[1] = currentColor[1]/ 255.0;
+			currentColor[2] = currentColor[2]/ 255.0;
+			break;
+			
 			
 			default:
 			break;
@@ -175,22 +189,37 @@ myGui = new MyGUI();
 	 let changingTextDiv = document.getElementById("changingText");
     
     function setText() {
-        let R = Math.round(currentColor[0] * 255);
-		let G = Math.round(currentColor[1] * 255);
-		let B = Math.round(currentColor[2] * 255);
-        changingTextDiv.innerHTML = `RGB : ( ${R} , ${G} , ${B}  )`;
+		//if(ColorChangeType == 5)
+		//{
+		//    let R = Math.round(currentColor[0]);
+		//	let G = Math.round(currentColor[1]);
+		//	let B = Math.round(currentColor[2]);
+		//	changingTextDiv.innerHTML = `RGB : ( ${R} , ${G} , ${B}  )`;
+		//}
+		//else
+		{
+		    let R = Math.round(currentColor[0] * 255);
+			let G = Math.round(currentColor[1] * 255);
+			let B = Math.round(currentColor[2] * 255);
+			changingTextDiv.innerHTML = `RGB : ( ${R} , ${G} , ${B}  )`;
+		}
+      
     }
 	 
     function animate() {
-       
+       clearTimeout(TimeOutHandler);
         ChangeColor();
 		setText();
         draw(currentColor);
-        setTimeout(animate,  myGui.intervel);
+		if(ColorChangeType != 5 && ColorChangeType != 4)
+		{
+			TimeOutHandler = setTimeout(animate,  myGui.intervel);
+		}
+        
     }
 
 
-    animate();
+    //animate();
 }
 </script>
 </html>
